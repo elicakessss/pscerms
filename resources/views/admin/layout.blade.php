@@ -16,6 +16,9 @@
         .sidebar-gradient {
             background: linear-gradient(180deg, #064e3b 0%, #065f46 50%, #047857 100%);
         }
+        .header-gradient {
+            background: linear-gradient(180deg, #064e3b 0%, #065f46 50%, #047857 100%);
+        }
         .active-nav {
             background-color: rgba(255, 255, 255, 0.1);
             border-right: 4px solid #047857;
@@ -110,16 +113,16 @@
                     <span>User Management</span>
                 </a>
 
-                <a href="#"
-                   class="flex items-center space-x-3 p-3 rounded-lg hover:bg-green-600 transition-colors nav-link">
+                <a href="{{ route('admin.council_management.index') }}"
+                   class="flex items-center space-x-3 p-3 rounded-lg hover:bg-green-600 transition-colors nav-link {{ request()->routeIs('admin.council_management.*') ? 'active-nav' : '' }}">
                     <i class="fas fa-user-tie w-5"></i>
                     <span>Council Management</span>
                 </a>
 
-                <a href="#"
-                   class="flex items-center space-x-3 p-3 rounded-lg hover:bg-green-600 transition-colors nav-link">
-                    <i class="fas fa-clipboard-list w-5"></i>
-                    <span>Evaluation Management</span>
+                <a href="{{ route('admin.account.index') }}"
+                   class="flex items-center space-x-3 p-3 rounded-lg hover:bg-green-600 transition-colors nav-link {{ request()->routeIs('admin.account.*') ? 'active-nav' : '' }}">
+                    <i class="fas fa-user-cog w-5"></i>
+                    <span>Account</span>
                 </a>
 
                 <a href="#"
@@ -144,10 +147,10 @@
         <!-- Main Content -->
         <div class="flex-1 flex flex-col overflow-hidden">
             <!-- Top Header -->
-            <header class="bg-white shadow-sm border-b p-4">
+            <header class="header-gradient shadow-sm border-b p-4">
                 <div class="flex items-center justify-between">
-                    <h2 class="text-2xl font-semibold text-gray-800">@yield('page-title', 'Dashboard')</h2>
-                    <div class="flex items-center space-x-4">
+                    <h2 class="text-2xl font-semibold text-white">@yield('page-title', 'Dashboard')</h2>
+                    <div class="flex items-center space-x-4 text-white">
                         <!-- Search (if needed) -->
                         @yield('header-actions')
                     </div>

@@ -245,7 +245,7 @@
                         <span class="close-btn">×</span>
                     </div>
 
-                    <form method="POST" action="{{ route('login') }}">
+                    <form method="POST" action="/login">
                         @csrf
 
                         <!-- ID Number -->
@@ -311,7 +311,7 @@
                 <div class="login-logo">
                     <img src="{{ asset('images/psg-logo.png') }}" alt="PSG Logo" class="logo-image">
                     <h2>Paulinian Student Council</h2>
-                    <p>Election and Resource Management System</p>
+                    <p>E-Portfolio and Rank Management System</p>
                 </div>
             </div>
         </div>

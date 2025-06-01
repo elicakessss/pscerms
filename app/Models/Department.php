@@ -35,5 +35,13 @@ class Department extends Model
     {
         return $this->hasMany(Adviser::class);
     }
+
+    /**
+     * Get the councils that belong to the department.
+     */
+    public function councils()
+    {
+        return $this->hasMany(Council::class);
+    }
 }
 

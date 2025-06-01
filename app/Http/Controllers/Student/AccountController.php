@@ -13,7 +13,16 @@ class AccountController extends Controller
     public function index()
     {
         $student = Auth::user();
-        return view('student.account.index', compact('student'));
+
+        // Get completed councils for portfolio
+        $completedCouncils = $student->councilOfficers()
+            ->with(['council.department'])
+            ->whereNotNull('completed_at')
+            ->whereNotNull('final_score')
+            ->orderBy('completed_at', 'desc')
+            ->get();
+
+        return view('student.account.index', compact('student', 'completedCouncils'));
     }
 
     public function edit()

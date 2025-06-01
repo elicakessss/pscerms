@@ -9,17 +9,18 @@ use App\Http\Controllers\Adviser\DashboardController as AdviserDashboardControll
 use App\Http\Controllers\Adviser\StudentManagementController as AdviserStudentManagementController;
 use App\Http\Controllers\Admin\UserManagementController as AdminUserManagementController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Admin\CouncilManagementController as AdminCouncilManagementController;
+use App\Http\Controllers\Admin\AccountController as AdminAccountController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 
 // Home page - redirect to login
 Route::get('/', function () {
-    return redirect()->route('login');
-})->name('home');
+    return redirect()->route('login');})->name('home');
 
 // Authentication Routes
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
-Route::post('/login', [LoginController::class, 'login'])->name('login.post');
+Route::post('/login', [LoginController::class, 'login']);
 
 // Password Reset Routes
 Route::get('/forgot-password', [ForgotPasswordController::class, 'showLinkRequestForm'])->name('password.request');
@@ -42,6 +43,15 @@ Route::prefix('student')->name('student.')->group(function () {
         Route::get('/account/edit', [StudentAccountController::class, 'edit'])->name('account.edit');
         Route::put('/account', [StudentAccountController::class, 'update'])->name('account.update');
         Route::put('/account/password', [StudentAccountController::class, 'updatePassword'])->name('account.update_password');
+
+        // My Councils management
+        Route::get('/councils', [App\Http\Controllers\Student\CouncilController::class, 'index'])->name('councils.index');
+        Route::get('/councils/{council}', [App\Http\Controllers\Student\CouncilController::class, 'show'])->name('councils.show');
+
+        // Evaluation management
+        Route::get('/evaluation/self/{council}', [App\Http\Controllers\Student\EvaluationController::class, 'showSelf'])->name('evaluation.self');
+        Route::get('/evaluation/peer/{council}/{evaluatedStudent}', [App\Http\Controllers\Student\EvaluationController::class, 'showPeer'])->name('evaluation.peer');
+        Route::post('/evaluation', [App\Http\Controllers\Student\EvaluationController::class, 'store'])->name('evaluation.store');
 
         // Logout
         Route::post('/logout', function() {
@@ -75,6 +85,22 @@ Route::prefix('adviser')->name('adviser.')->group(function () {
         Route::put('/student_management/{student}', [AdviserStudentManagementController::class, 'update'])->name('student_management.update');
         Route::delete('/student_management/{student}', [AdviserStudentManagementController::class, 'destroy'])->name('student_management.destroy');
 
+        // Council management
+        Route::get('/councils', [App\Http\Controllers\Adviser\CouncilController::class, 'index'])->name('councils.index');
+        Route::get('/councils/{council}', [App\Http\Controllers\Adviser\CouncilController::class, 'show'])->name('councils.show');
+        Route::post('/councils/{council}/officers', [App\Http\Controllers\Adviser\CouncilController::class, 'assignOfficer'])->name('councils.assign_officer');
+        Route::post('/councils/{council}/coordinators', [App\Http\Controllers\Adviser\CouncilController::class, 'addCoordinator'])->name('councils.add_coordinator');
+        Route::put('/councils/{council}/officers/{officer}', [App\Http\Controllers\Adviser\CouncilController::class, 'updateOfficer'])->name('councils.update_officer');
+
+        // Evaluation management
+        Route::get('/evaluation/{council}/{student}', [App\Http\Controllers\Adviser\EvaluationController::class, 'show'])->name('evaluation.show');
+        Route::post('/evaluation', [App\Http\Controllers\Adviser\EvaluationController::class, 'store'])->name('evaluation.store');
+        Route::delete('/councils/{council}/officers/{officer}', [App\Http\Controllers\Adviser\CouncilController::class, 'removeOfficer'])->name('councils.remove_officer');
+
+        // Evaluation management
+        Route::post('/councils/{council}/start-evaluations', [App\Http\Controllers\Adviser\CouncilController::class, 'startEvaluations'])->name('councils.start_evaluations');
+        Route::delete('/councils/{council}/clear-evaluations', [App\Http\Controllers\Adviser\CouncilController::class, 'clearEvaluations'])->name('councils.clear_evaluations');
+
         // Logout
         Route::post('/logout', function() {
             Auth::guard('adviser')->logout();
@@ -92,6 +118,12 @@ Route::prefix('admin')->name('admin.')->group(function () {
         // Dashboard
         Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
 
+        // Account management
+        Route::get('/account', [AdminAccountController::class, 'index'])->name('account.index');
+        Route::get('/account/edit', [AdminAccountController::class, 'edit'])->name('account.edit');
+        Route::put('/account', [AdminAccountController::class, 'update'])->name('account.update');
+        Route::put('/account/password', [AdminAccountController::class, 'updatePassword'])->name('account.update_password');
+
         // User management - Custom routes to handle type parameter
         Route::get('/user_management', [AdminUserManagementController::class, 'index'])->name('user_management.index');
         Route::get('/user_management/create', [AdminUserManagementController::class, 'create'])->name('user_management.create');
@@ -100,6 +132,12 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/user_management/{type}/{id}/edit', [AdminUserManagementController::class, 'edit'])->name('user_management.edit');
         Route::put('/user_management/{type}/{id}', [AdminUserManagementController::class, 'update'])->name('user_management.update');
         Route::delete('/user_management/{type}/{id}', [AdminUserManagementController::class, 'destroy'])->name('user_management.destroy');
+
+        // Council management
+        Route::resource('council_management', AdminCouncilManagementController::class)->parameters([
+            'council_management' => 'council'
+        ]);
+        Route::put('/council_management/academic-year/update', [AdminCouncilManagementController::class, 'updateAcademicYear'])->name('council_management.update_academic_year');
 
         // Logout
         Route::post('/logout', function() {

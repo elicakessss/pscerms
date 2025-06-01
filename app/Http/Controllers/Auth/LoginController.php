@@ -39,14 +39,16 @@ class LoginController extends Controller
             // Debug information
             \Log::info('User authenticated with guard: ' . $guard);
             \Log::info('User role: ' . $role);
+            \Log::info('Authenticated user: ' . Auth::guard($guard)->user()->id);
+            \Log::info('Session ID: ' . $request->session()->getId());
 
             // Redirect based on role
             if ($role === 'student') {
-                return redirect()->intended(route('student.dashboard'));
+                return redirect()->route('student.dashboard');
             } elseif ($role === 'adviser') {
-                return redirect()->intended(route('adviser.dashboard'));
+                return redirect()->route('adviser.dashboard');
             } else {
-                return redirect()->intended(route('admin.dashboard'));
+                return redirect()->route('admin.dashboard');
             }
         }
 

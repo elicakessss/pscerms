@@ -12,17 +12,46 @@ use Illuminate\Support\Facades\Storage;
 
 class StudentManagementController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $adviser = Auth::user();
-        $students = Student::where('department_id', $adviser->department_id)->paginate(10);
+        $isUniwideAdviser = $adviser->department->abbreviation === 'UNIWIDE';
 
-        return view('adviser.student_management.index', compact('students'));
+        // Build query based on adviser type
+        $query = Student::with('department');
+
+        if (!$isUniwideAdviser) {
+            // Regular advisers can only see students from their department
+            $query->where('department_id', $adviser->department_id);
+        } else {
+            // Uniwide advisers can see all students, with optional department filter
+            if ($request->filled('department_filter') && $request->department_filter !== 'all') {
+                $query->where('department_id', $request->department_filter);
+            }
+        }
+
+        // Add search functionality
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('first_name', 'like', "%{$search}%")
+                  ->orWhere('last_name', 'like', "%{$search}%")
+                  ->orWhere('id_number', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+
+        $students = $query->paginate(10);
+
+        // Get departments for filter dropdown (uniwide advisers only)
+        $departments = $isUniwideAdviser ? Department::where('abbreviation', '!=', 'UNIWIDE')->get() : collect();
+
+        return view('adviser.student_management.index', compact('students', 'isUniwideAdviser', 'departments'));
     }
 
     public function create()
     {
-        $adviser = Auth::user();
+        $adviser = Auth::user()->load('department');
         $departments = Department::all();
         $isUniwideAdviser = $adviser->department->abbreviation === 'UNIWIDE';
 
@@ -32,8 +61,9 @@ class StudentManagementController extends Controller
     public function store(Request $request)
     {
         $adviser = Auth::user();
+        $isUniwideAdviser = $adviser->department->abbreviation === 'UNIWIDE';
 
-        $validated = $request->validate([
+        $rules = [
             'id_number' => 'required|string|max:255|unique:students,id_number',
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
@@ -41,7 +71,14 @@ class StudentManagementController extends Controller
             'password' => 'nullable|string|min:6',
             'profile_picture' => 'nullable|image|max:2048',
             'description' => 'nullable|string',
-        ]);
+        ];
+
+        // Add department validation for uniwide advisers
+        if ($isUniwideAdviser) {
+            $rules['department_id'] = 'required|exists:departments,id';
+        }
+
+        $validated = $request->validate($rules);
 
         // Set default password if not provided
         if (empty($validated['password'])) {
@@ -51,8 +88,12 @@ class StudentManagementController extends Controller
         // Hash password
         $validated['password'] = Hash::make($validated['password']);
 
-        // Set department_id to adviser's department
-        $validated['department_id'] = $adviser->department_id;
+        // Set department_id based on adviser type
+        if (!$isUniwideAdviser) {
+            // Regular advisers can only create students in their department
+            $validated['department_id'] = $adviser->department_id;
+        }
+        // For uniwide advisers, department_id comes from the form and is already validated
 
         // Handle profile picture upload
         if ($request->hasFile('profile_picture')) {
@@ -69,26 +110,35 @@ class StudentManagementController extends Controller
     public function show(Student $student)
     {
         $adviser = Auth::user();
+        $isUniwideAdviser = $adviser->department->abbreviation === 'UNIWIDE';
 
-        // Check if student belongs to adviser's department
-        if ($student->department_id !== $adviser->department_id) {
+        // Check if student belongs to adviser's department (unless uniwide adviser)
+        if (!$isUniwideAdviser && $student->department_id !== $adviser->department_id) {
             abort(403, 'Unauthorized action.');
         }
 
-        return view('adviser.student_management.show', compact('student'));
+        // Get completed councils for portfolio
+        $completedCouncils = $student->councilOfficers()
+            ->with(['council.department'])
+            ->whereNotNull('completed_at')
+            ->whereNotNull('final_score')
+            ->orderBy('completed_at', 'desc')
+            ->get();
+
+        return view('adviser.student_management.show', compact('student', 'completedCouncils'));
     }
 
     public function edit(Student $student)
     {
         $adviser = Auth::user();
+        $isUniwideAdviser = $adviser->department->abbreviation === 'UNIWIDE';
 
-        // Check if student belongs to adviser's department
-        if ($student->department_id !== $adviser->department_id) {
+        // Check if student belongs to adviser's department (unless uniwide adviser)
+        if (!$isUniwideAdviser && $student->department_id !== $adviser->department_id) {
             abort(403, 'Unauthorized action.');
         }
 
         $departments = Department::all();
-        $isUniwideAdviser = $adviser->department->abbreviation === 'UNIWIDE';
 
         return view('adviser.student_management.edit', compact('student', 'departments', 'isUniwideAdviser'));
     }
@@ -96,9 +146,10 @@ class StudentManagementController extends Controller
     public function update(Request $request, Student $student)
     {
         $adviser = Auth::user();
+        $isUniwideAdviser = $adviser->department->abbreviation === 'UNIWIDE';
 
-        // Check if student belongs to adviser's department
-        if ($student->department_id !== $adviser->department_id) {
+        // Check if student belongs to adviser's department (unless uniwide adviser)
+        if (!$isUniwideAdviser && $student->department_id !== $adviser->department_id) {
             abort(403, 'Unauthorized action.');
         }
 
@@ -138,9 +189,10 @@ class StudentManagementController extends Controller
     public function destroy(Student $student)
     {
         $adviser = Auth::user();
+        $isUniwideAdviser = $adviser->department->abbreviation === 'UNIWIDE';
 
-        // Check if student belongs to adviser's department
-        if ($student->department_id !== $adviser->department_id) {
+        // Check if student belongs to adviser's department (unless uniwide adviser)
+        if (!$isUniwideAdviser && $student->department_id !== $adviser->department_id) {
             abort(403, 'Unauthorized action.');
         }
 

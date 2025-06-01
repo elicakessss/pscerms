@@ -16,6 +16,9 @@
         .sidebar-gradient {
             background: linear-gradient(180deg, #064e3b 0%, #065f46 50%, #047857 100%);
         }
+        .header-gradient {
+            background: linear-gradient(180deg, #064e3b 0%, #065f46 50%, #047857 100%);
+        }
         .sidebar-title {
             font-size: 16px;
             font-weight: 700;
@@ -77,7 +80,7 @@
                         </a>
                     </li>
                     <li>
-                        <a href="#" class="flex items-center px-6 py-3 text-white hover:bg-green-700">
+                        <a href="{{ route('student.councils.index') }}" class="flex items-center px-6 py-3 text-white hover:bg-green-700 {{ request()->routeIs('student.councils.*') ? 'bg-green-700' : '' }}">
                             <i class="fas fa-users-cog w-5 h-5 mr-3"></i>
                             <span>My Councils</span>
                         </a>
@@ -106,13 +109,13 @@
         <!-- Main Content -->
         <div class="flex-1 flex flex-col overflow-hidden">
             <!-- Top Navigation -->
-            <header class="bg-white shadow">
+            <header class="header-gradient shadow">
                 <div class="px-6 py-4 flex items-center justify-between">
-                    <h2 class="text-xl font-semibold text-gray-800">@yield('page-title', 'Dashboard')</h2>
+                    <h2 class="text-xl font-semibold text-white">@yield('page-title', 'Dashboard')</h2>
                     <div class="flex items-center space-x-4">
                         <!-- Notifications -->
                         <div class="relative">
-                            <button class="text-gray-500 hover:text-gray-700">
+                            <button class="text-green-100 hover:text-white">
                                 <i class="fas fa-bell"></i>
                             </button>
                         </div>

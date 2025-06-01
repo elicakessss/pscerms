@@ -1,66 +1,96 @@
 @extends('adviser.layout')
 
 @section('title', 'Edit Profile')
+@section('page-title', 'Edit Profile')
 
 @section('content')
-<div class="container mx-auto px-6 py-8">
-    <div class="flex justify-between items-center mb-6">
-        <h1 class="text-2xl font-semibold text-gray-800">Edit Profile</h1>
-        <a href="{{ route('adviser.account.index') }}" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 px-4 rounded-lg flex items-center">
-            <i class="fas fa-arrow-left mr-2"></i> Back to Profile
-        </a>
-    </div>
-
-    <div class="bg-white rounded-lg shadow-md overflow-hidden">
-        <div class="p-6 border-b border-gray-200">
-            <h2 class="text-lg font-medium text-gray-800">Adviser Information</h2>
+<div class="max-w-4xl mx-auto">
+    <div class="bg-white rounded-lg shadow">
+        <!-- Header -->
+        <div class="px-6 py-4 bg-green-600 text-white rounded-t-lg">
+            <div class="flex items-center justify-between">
+                <h3 class="text-lg font-medium text-white">Edit Profile: {{ auth()->user()->first_name }} {{ auth()->user()->last_name }}</h3>
+                <div class="flex items-center space-x-3">
+                    <a href="{{ route('adviser.account.index') }}"
+                       class="text-green-100 hover:text-white transition-colors">
+                        <i class="fas fa-arrow-left mr-2"></i>
+                        Back to Profile
+                    </a>
+                </div>
+            </div>
         </div>
 
-        <form action="{{ route('adviser.account.update') }}" method="POST" enctype="multipart/form-data" class="p-6">
+        <!-- Form -->
+        <form method="POST" action="{{ route('adviser.account.update') }}" enctype="multipart/form-data" class="p-6">
             @csrf
             @method('PUT')
 
-            <!-- Profile Picture - Centered at the top -->
-            <div class="mb-8 flex flex-col items-center">
-                <label for="profile_picture" class="block text-sm font-medium text-gray-700 mb-4 text-center">Profile Picture</label>
-
-                <div class="mb-4">
-                    @if($adviser->profile_picture)
-                        <img src="{{ asset('storage/' . $adviser->profile_picture) }}"
-                             alt="{{ $adviser->first_name }}"
-                             class="w-40 h-40 object-cover rounded-full border-4 border-gray-200">
-                    @else
-                        <div class="w-40 h-40 rounded-full bg-gray-200 flex items-center justify-center border-4 border-gray-300">
-                            <i class="fas fa-user text-4xl text-gray-500"></i>
-                        </div>
-                    @endif
-                </div>
-
-                <div class="flex flex-col items-center">
-                    <input type="file"
-                           id="profile_picture"
-                           name="profile_picture"
-                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                           accept="image/*"
-                           onchange="previewImage(event)">
-                    <p class="mt-2 text-xs text-gray-500 text-center">Accepted formats: JPEG, PNG, JPG, GIF. Max size: 2MB.</p>
-                    @error('profile_picture')
-                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                    @enderror
+            <!-- Profile Picture -->
+            <div class="mb-6">
+                <label for="profile_picture" class="block text-sm font-medium text-gray-700 mb-2">Profile Picture</label>
+                <div class="flex items-center space-x-4">
+                    <div class="flex-shrink-0">
+                        @if(auth()->user()->profile_picture)
+                            <img src="{{ asset('storage/' . auth()->user()->profile_picture) }}"
+                                 alt="{{ auth()->user()->first_name }}"
+                                 class="w-20 h-20 object-cover rounded-full border-2 border-gray-200">
+                        @else
+                            <div class="w-20 h-20 rounded-full bg-gray-200 flex items-center justify-center border-2 border-gray-300">
+                                <i class="fas fa-user text-2xl text-gray-500"></i>
+                            </div>
+                        @endif
+                    </div>
+                    <div class="flex-1">
+                        <input type="file"
+                               id="profile_picture"
+                               name="profile_picture"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                               accept="image/*">
+                        <p class="mt-1 text-xs text-gray-500">Accepted formats: JPEG, PNG, JPG, GIF. Max size: 2MB.</p>
+                        @error('profile_picture')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
                 </div>
             </div>
 
-            <div class="border-t border-gray-200 pt-6 mb-6"></div>
-
-            <!-- Personal Information -->
+            <!-- Basic Information -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <!-- ID Number -->
+                <div>
+                    <label for="id_number" class="block text-sm font-medium text-gray-700 mb-2">ID Number</label>
+                    <input type="text"
+                           id="id_number"
+                           name="id_number"
+                           value="{{ old('id_number', auth()->user()->id_number) }}"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                           required>
+                    @error('id_number')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <!-- Email -->
+                <div>
+                    <label for="email" class="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+                    <input type="email"
+                           id="email"
+                           name="email"
+                           value="{{ old('email', auth()->user()->email) }}"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                           required>
+                    @error('email')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+
                 <!-- First Name -->
                 <div>
                     <label for="first_name" class="block text-sm font-medium text-gray-700 mb-2">First Name</label>
                     <input type="text"
                            id="first_name"
                            name="first_name"
-                           value="{{ old('first_name', $adviser->first_name) }}"
+                           value="{{ old('first_name', auth()->user()->first_name) }}"
                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
                            required>
                     @error('first_name')
@@ -74,27 +104,13 @@
                     <input type="text"
                            id="last_name"
                            name="last_name"
-                           value="{{ old('last_name', $adviser->last_name) }}"
+                           value="{{ old('last_name', auth()->user()->last_name) }}"
                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
                            required>
                     @error('last_name')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                     @enderror
                 </div>
-            </div>
-
-            <!-- Contact Information -->
-            <div class="mb-6">
-                <label for="email" class="block text-sm font-medium text-gray-700 mb-2">Email</label>
-                <input type="email"
-                       id="email"
-                       name="email"
-                       value="{{ old('email', $adviser->email) }}"
-                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                       required>
-                @error('email')
-                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                @enderror
             </div>
 
             <!-- Description -->
@@ -104,15 +120,20 @@
                           name="description"
                           rows="4"
                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                          placeholder="Additional information about yourself">{{ old('description', $adviser->description) }}</textarea>
+                          placeholder="Additional information about yourself">{{ old('description', auth()->user()->description) }}</textarea>
                 @error('description')
                     <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                 @enderror
             </div>
 
-            <!-- Submit Button -->
-            <div class="flex justify-end">
-                <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-6 rounded-lg">
+            <!-- Form Actions -->
+            <div class="flex items-center justify-end space-x-4 pt-6 border-t border-gray-200">
+                <a href="{{ route('adviser.account.index') }}"
+                   class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors">
+                    Cancel
+                </a>
+                <button type="submit"
+                        class="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors">
                     Update Profile
                 </button>
             </div>
@@ -120,39 +141,44 @@
     </div>
 
     <!-- Password Change Section -->
-    <div class="bg-white rounded-lg shadow-md overflow-hidden mt-6">
-        <div class="p-6 border-b border-gray-200">
-            <h2 class="text-lg font-medium text-gray-800">Change Password</h2>
+    <div class="bg-white rounded-lg shadow mt-6">
+        <!-- Header -->
+        <div class="px-6 py-4 bg-green-600 text-white rounded-t-lg">
+            <h3 class="text-lg font-medium text-white">Change Password</h3>
         </div>
 
-        <form action="{{ route('adviser.account.update_password') }}" method="POST" class="p-6">
+        <!-- Form -->
+        <form method="POST" action="{{ route('adviser.account.update_password') }}" class="p-6">
             @csrf
             @method('PUT')
 
-            <!-- Current Password -->
-            <div class="mb-6">
-                <label for="current_password" class="block text-sm font-medium text-gray-700 mb-2">Current Password</label>
-                <input type="password"
-                       id="current_password"
-                       name="current_password"
-                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                       required>
-                @error('current_password')
-                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                @enderror
-            </div>
+            <!-- Password Fields -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <!-- Current Password -->
+                <div>
+                    <label for="current_password" class="block text-sm font-medium text-gray-700 mb-2">Current Password</label>
+                    <input type="password"
+                           id="current_password"
+                           name="current_password"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                           required>
+                    @error('current_password')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
 
-            <!-- New Password -->
-            <div class="mb-6">
-                <label for="password" class="block text-sm font-medium text-gray-700 mb-2">New Password</label>
-                <input type="password"
-                       id="password"
-                       name="password"
-                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                       required>
-                @error('password')
-                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                @enderror
+                <!-- New Password -->
+                <div>
+                    <label for="password" class="block text-sm font-medium text-gray-700 mb-2">New Password</label>
+                    <input type="password"
+                           id="password"
+                           name="password"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                           required>
+                    @error('password')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
             </div>
 
             <!-- Confirm Password -->
@@ -165,29 +191,18 @@
                        required>
             </div>
 
-            <!-- Submit Button -->
-            <div class="flex justify-end">
-                <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-6 rounded-lg">
+            <!-- Form Actions -->
+            <div class="flex items-center justify-end space-x-4 pt-6 border-t border-gray-200">
+                <a href="{{ route('adviser.account.index') }}"
+                   class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors">
+                    Cancel
+                </a>
+                <button type="submit"
+                        class="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors">
                     Update Password
                 </button>
             </div>
         </form>
     </div>
 </div>
-
-<script>
-function previewImage(event) {
-    const file = event.target.files[0];
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const profilePictureContainer = document.querySelector('.mb-4');
-            if (profilePictureContainer) {
-                profilePictureContainer.innerHTML = `<img src="${e.target.result}" alt="Preview" class="w-40 h-40 object-cover rounded-full border-4 border-gray-200">`;
-            }
-        }
-        reader.readAsDataURL(file);
-    }
-}
-</script>
 @endsection

@@ -44,13 +44,20 @@
                             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
                             {{ !$isUniwideAdviser ? 'disabled' : '' }}
                             required>
-                        @foreach($departments as $department)
-                            @if($department->abbreviation !== 'UNIWIDE')
-                                <option value="{{ $department->id }}" {{ old('department_id') == $department->id ? 'selected' : '' }}>
-                                    {{ $department->name }} ({{ $department->abbreviation }})
-                                </option>
-                            @endif
-                        @endforeach
+                        @if($isUniwideAdviser)
+                            @foreach($departments as $department)
+                                @if($department->abbreviation !== 'UNIWIDE')
+                                    <option value="{{ $department->id }}" {{ old('department_id') == $department->id ? 'selected' : '' }}>
+                                        {{ $department->name }} ({{ $department->abbreviation }})
+                                    </option>
+                                @endif
+                            @endforeach
+                        @else
+                            <!-- For non-UNIWIDE advisers, show only their department -->
+                            <option value="{{ auth()->user()->department_id }}" selected>
+                                {{ auth()->user()->department->name }} ({{ auth()->user()->department->abbreviation }})
+                            </option>
+                        @endif
                     </select>
                     @if(!$isUniwideAdviser)
                         <input type="hidden" name="department_id" value="{{ auth()->user()->department_id }}">

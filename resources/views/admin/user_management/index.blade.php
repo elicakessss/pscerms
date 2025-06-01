@@ -6,7 +6,7 @@
 @section('header-actions')
     <div class="flex items-center space-x-4">
         <!-- Search Bar -->
-        <form method="GET" class="flex items-center space-x-2">
+        <form method="GET">
             <input type="hidden" name="type" value="{{ $userType }}">
             <input type="hidden" name="department" value="{{ $department }}">
             <div class="relative">
@@ -17,9 +17,6 @@
                        class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
                 <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
             </div>
-            <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors">
-                Search
-            </button>
         </form>
 
         <!-- Add User Button -->
@@ -32,34 +29,103 @@
 @endsection
 
 @section('content')
-<div class="bg-white rounded-lg shadow">
-    <!-- Filters Section -->
-    <div class="p-6 border-b border-gray-200">
-        <div class="flex flex-wrap items-center justify-between gap-4">
-            <!-- User Type Tabs -->
-            <div class="flex bg-gray-100 rounded-lg p-1">
-                <a href="{{ request()->fullUrlWithQuery(['type' => 'all']) }}"
-                   class="px-4 py-2 rounded-md text-sm font-medium transition-colors {{ $userType === 'all' ? 'bg-white text-green-600 shadow-sm' : 'text-gray-600 hover:text-gray-900' }}">
-                    All
-                </a>
-                <a href="{{ request()->fullUrlWithQuery(['type' => 'students']) }}"
-                   class="px-4 py-2 rounded-md text-sm font-medium transition-colors {{ $userType === 'students' ? 'bg-white text-green-600 shadow-sm' : 'text-gray-600 hover:text-gray-900' }}">
-                    Students
-                </a>
-                <a href="{{ request()->fullUrlWithQuery(['type' => 'advisers']) }}"
-                   class="px-4 py-2 rounded-md text-sm font-medium transition-colors {{ $userType === 'advisers' ? 'bg-white text-green-600 shadow-sm' : 'text-gray-600 hover:text-gray-900' }}">
-                    Advisers
-                </a>
-                <a href="{{ request()->fullUrlWithQuery(['type' => 'admins']) }}"
-                   class="px-4 py-2 rounded-md text-sm font-medium transition-colors {{ $userType === 'admins' ? 'bg-white text-green-600 shadow-sm' : 'text-gray-600 hover:text-gray-900' }}">
-                    Administrators
-                </a>
+<!-- Summary Cards -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+    <!-- Total Users Card -->
+    <div class="bg-white rounded-lg shadow p-6">
+        <div class="flex items-center">
+            <div class="flex-shrink-0">
+                <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                    <i class="fas fa-users text-blue-600"></i>
+                </div>
             </div>
+            <div class="ml-4">
+                <p class="text-sm font-medium text-gray-500">Total Users</p>
+                <p class="text-2xl font-semibold text-gray-900">{{ $users->count() }}</p>
+            </div>
+        </div>
+    </div>
 
-            <!-- Department Filter -->
+    <!-- Students Card -->
+    <div class="bg-white rounded-lg shadow p-6">
+        <div class="flex items-center">
+            <div class="flex-shrink-0">
+                <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                    <i class="fas fa-graduation-cap text-green-600"></i>
+                </div>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm font-medium text-gray-500">Students</p>
+                <p class="text-2xl font-semibold text-gray-900">{{ $users->where('user_type', 'Student')->count() }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Advisers Card -->
+    <div class="bg-white rounded-lg shadow p-6">
+        <div class="flex items-center">
+            <div class="flex-shrink-0">
+                <div class="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                    <i class="fas fa-chalkboard-teacher text-purple-600"></i>
+                </div>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm font-medium text-gray-500">Advisers</p>
+                <p class="text-2xl font-semibold text-gray-900">{{ $users->where('user_type', 'Adviser')->count() }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Administrators Card -->
+    <div class="bg-white rounded-lg shadow p-6">
+        <div class="flex items-center">
+            <div class="flex-shrink-0">
+                <div class="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
+                    <i class="fas fa-user-shield text-red-600"></i>
+                </div>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm font-medium text-gray-500">Administrators</p>
+                <p class="text-2xl font-semibold text-gray-900">{{ $users->where('user_type', 'Administrator')->count() }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- User Management Section -->
+<div class="bg-white rounded-lg shadow">
+    <!-- Header Section -->
+    <div class="px-6 py-4 bg-green-600 text-white rounded-t-lg">
+        <h3 class="text-lg font-semibold text-white">All Users</h3>
+        <p class="text-sm text-green-100 mt-1">View and manage all users across departments</p>
+    </div>
+
+    <!-- Tab Navigation -->
+    <div class="border-b border-gray-200">
+        <nav class="-mb-px flex">
+            <a href="{{ request()->fullUrlWithQuery(['type' => 'all']) }}"
+               class="py-4 px-6 text-sm font-medium border-b-2 transition-colors {{ $userType === 'all' ? 'border-green-500 text-green-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
+                <i class="fas fa-users mr-2"></i>
+                All Users ({{ $users->count() }})
+            </a>
+            <a href="{{ request()->fullUrlWithQuery(['type' => 'students']) }}"
+               class="py-4 px-6 text-sm font-medium border-b-2 transition-colors {{ $userType === 'students' ? 'border-green-500 text-green-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
+                <i class="fas fa-graduation-cap mr-2"></i>
+                Students ({{ $users->where('user_type', 'Student')->count() }})
+            </a>
+            <a href="{{ request()->fullUrlWithQuery(['type' => 'advisers']) }}"
+               class="py-4 px-6 text-sm font-medium border-b-2 transition-colors {{ $userType === 'advisers' ? 'border-green-500 text-green-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
+                <i class="fas fa-chalkboard-teacher mr-2"></i>
+                Advisers ({{ $users->where('user_type', 'Adviser')->count() }})
+            </a>
+            <a href="{{ request()->fullUrlWithQuery(['type' => 'admins']) }}"
+               class="py-4 px-6 text-sm font-medium border-b-2 transition-colors {{ $userType === 'admins' ? 'border-green-500 text-green-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
+                <i class="fas fa-user-shield mr-2"></i>
+                Administrators ({{ $users->where('user_type', 'Administrator')->count() }})
+            </a>
             @if($userType !== 'admins')
-            <div class="flex items-center space-x-2">
-                <label class="text-sm font-medium text-gray-700">Department:</label>
+            <div class="ml-auto flex items-center px-6">
+                <label class="text-sm font-medium text-gray-700 mr-2">Department:</label>
                 <form method="GET" class="inline">
                     <input type="hidden" name="type" value="{{ $userType }}">
                     <input type="hidden" name="search" value="{{ $search }}">
@@ -75,39 +141,21 @@
                 </form>
             </div>
             @endif
-        </div>
+        </nav>
     </div>
 
-    <!-- Department Filter Buttons (for students only) -->
-    @if($userType === 'students' || $userType === 'all')
-    <div class="px-6 py-4 border-b border-gray-200">
-        <div class="flex flex-wrap gap-2">
-            @foreach($departments as $dept)
-                <a href="{{ request()->fullUrlWithQuery(['department' => $dept->id, 'type' => 'students']) }}"
-                   class="px-3 py-1.5 text-xs rounded-full border transition-colors {{ $department == $dept->id ? 'bg-green-600 text-white border-green-600' : 'bg-white text-gray-700 border-gray-300 hover:border-green-500' }}">
-                    {{ $dept->abbreviation }}
-                </a>
-            @endforeach
-            @if($department)
-                <a href="{{ request()->fullUrlWithQuery(['department' => null]) }}"
-                   class="px-3 py-1.5 text-xs rounded-full bg-gray-500 text-white hover:bg-gray-600 transition-colors">
-                    Clear Filter
-                </a>
-            @endif
-        </div>
-    </div>
-    @endif
+
 
     <!-- Users Table -->
     <div class="overflow-x-auto">
         <table class="w-full">
-            <thead class="bg-green-600 text-white">
-                <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Name</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">ID Number</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Department</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Role</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Actions</th>
+            <thead>
+                <tr class="border-b border-gray-200">
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID Number</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                 </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">

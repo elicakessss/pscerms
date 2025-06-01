@@ -119,7 +119,7 @@ class UserManagementController extends Controller
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
             'email' => 'required|email|max:255',
-            'password' => 'required|string|min:6',
+            'password' => 'nullable|string|min:6',
             'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'description' => 'nullable|string',
         ];
@@ -130,6 +130,11 @@ class UserManagementController extends Controller
         }
 
         $validated = $request->validate($rules);
+
+        // Set default password if not provided
+        if (empty($validated['password'])) {
+            $validated['password'] = '123456';
+        }
 
         // Hash password
         $validated['password'] = Hash::make($validated['password']);
@@ -198,7 +203,18 @@ class UserManagementController extends Controller
                            ->with('error', 'User not found.');
         }
 
-        return view('admin.user_management.show', compact('user', 'type'));
+        // Get completed councils for portfolio if user is a student
+        $completedCouncils = collect();
+        if ($type === 'student') {
+            $completedCouncils = $user->councilOfficers()
+                ->with(['council.department'])
+                ->whereNotNull('completed_at')
+                ->whereNotNull('final_score')
+                ->orderBy('completed_at', 'desc')
+                ->get();
+        }
+
+        return view('admin.user_management.show', compact('user', 'type', 'completedCouncils'));
     }
 
     public function edit($type, $id)
@@ -273,6 +289,12 @@ class UserManagementController extends Controller
         }
 
         $user->update($validated);
+
+        // If admin is editing their own account, redirect to dashboard with a personalized message
+        if ($type === 'admin' && $id == auth('admin')->id()) {
+            return redirect()->route('admin.dashboard')
+                            ->with('success', 'Your account information has been updated successfully!');
+        }
 
         return redirect()->route('admin.user_management.show', [$type, $id])
                         ->with('success', 'User updated successfully!');

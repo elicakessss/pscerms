@@ -25,9 +25,21 @@ class Adviser extends Authenticatable
         'remember_token',
     ];
 
+    protected $casts = [
+        'password' => 'hashed',
+    ];
+
     // Department relationship
     public function department()
     {
         return $this->belongsTo(Department::class);
+    }
+
+    /**
+     * Get the councils that belong to the adviser.
+     */
+    public function councils()
+    {
+        return $this->hasMany(Council::class);
     }
 }
