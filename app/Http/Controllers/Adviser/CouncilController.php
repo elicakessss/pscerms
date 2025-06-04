@@ -9,13 +9,14 @@ use App\Models\Student;
 use App\Models\CouncilOfficer;
 use App\Services\EvaluationService;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class CouncilController extends Controller
 {
     /**
      * Display a listing of the adviser's councils.
      */
-    public function index()
+    public function index(EvaluationService $evaluationService)
     {
         $adviser = Auth::user();
 
@@ -24,7 +25,95 @@ class CouncilController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-        return view('adviser.my_councils.index', compact('councils'));
+        // Get pending evaluations for this adviser
+        $pendingEvaluations = $evaluationService->getPendingEvaluationsForAdviser($adviser->id);
+
+        // Calculate statistics for summary cards
+        $stats = [
+            'total_councils' => $councils->count(),
+            'active_councils' => $councils->where('status', 'active')->count(),
+            'completed_councils' => $councils->where('status', 'completed')->count(),
+            'pending_evaluations' => $pendingEvaluations->count(),
+        ];
+
+        return view('adviser.my_councils.index', compact('councils', 'stats'));
+    }
+
+    /**
+     * Show the form for creating a new council.
+     */
+    public function create()
+    {
+        $adviser = Auth::user();
+        return view('adviser.my_councils.create', compact('adviser'));
+    }
+
+    /**
+     * Store a newly created council in storage.
+     */
+    public function store(Request $request)
+    {
+        $adviser = Auth::user();
+
+        $validated = $request->validate([
+            'academic_year' => [
+                'required',
+                'string',
+                'regex:/^\d{4}-\d{4}$/',
+                function ($attribute, $value, $fail) {
+                    $years = explode('-', $value);
+                    if (count($years) !== 2) {
+                        $fail('The academic year must be in YYYY-YYYY format.');
+                        return;
+                    }
+
+                    $startYear = (int) $years[0];
+                    $endYear = (int) $years[1];
+
+                    if ($endYear !== $startYear + 1) {
+                        $fail('The academic year must be consecutive years (e.g., 2024-2025).');
+                    }
+                }
+            ],
+        ]);
+
+        // Check if adviser already has a council for this academic year and department
+        $existingCouncil = Council::where('adviser_id', $adviser->id)
+            ->where('department_id', $adviser->department_id)
+            ->where('academic_year', $validated['academic_year'])
+            ->first();
+
+        if ($existingCouncil) {
+            return back()->withErrors([
+                'academic_year' => 'You already have a council for this academic year in your department.'
+            ])->withInput();
+        }
+
+        // Check if department already has a council for this academic year
+        $departmentCouncil = Council::where('department_id', $adviser->department_id)
+            ->where('academic_year', $validated['academic_year'])
+            ->first();
+
+        if ($departmentCouncil) {
+            return back()->withErrors([
+                'academic_year' => 'Your department already has a council for this academic year.'
+            ])->withInput();
+        }
+
+        // Create council name based on department
+        $councilName = 'Paulinian Student Government - ' . $adviser->department->abbreviation;
+
+        // Create the council
+        Council::create([
+            'name' => $councilName,
+            'academic_year' => $validated['academic_year'],
+            'status' => 'active',
+            'adviser_id' => $adviser->id,
+            'department_id' => $adviser->department_id,
+        ]);
+
+        return redirect()->route('adviser.councils.index')
+            ->with('success', 'Council created successfully! You can now start assigning officers.');
     }
 
     /**
@@ -107,10 +196,9 @@ class CouncilController extends Controller
 
         // Validate department constraints based on council type
         if ($council->department->abbreviation === 'UNIWIDE') {
-            // For Uniwide councils, validate department constraints for specific positions
-            $positionValidation = $this->validateUniwidePositionConstraints($council, $validated['position_title'], $student);
-            if ($positionValidation !== true) {
-                return back()->withErrors(['student_id' => $positionValidation]);
+            // For Uniwide councils, students can be from any department except UNIWIDE
+            if ($student->department->abbreviation === 'UNIWIDE') {
+                return back()->withErrors(['student_id' => 'Students from UNIWIDE department cannot be assigned to council positions.']);
             }
         } else {
             // For departmental councils, student must belong to the same department
@@ -173,8 +261,11 @@ class CouncilController extends Controller
             'student_id' => 'required|exists:students,id',
         ]);
 
-        // Clean up the coordinator title
+        // Clean up the coordinator title and append "Coordinator" if not already present
         $coordinatorTitle = trim($validated['coordinator_title']);
+        if (!str_ends_with(strtolower($coordinatorTitle), 'coordinator')) {
+            $coordinatorTitle .= ' Coordinator';
+        }
 
         // Get student and validate
         $student = Student::with('department')->find($validated['student_id']);
@@ -234,6 +325,106 @@ class CouncilController extends Controller
     }
 
     /**
+     * Add a senator position to the council.
+     */
+    public function addSenator(Request $request, Council $council)
+    {
+        return $this->addDynamicPosition($request, $council, 'Senator', 'Officer');
+    }
+
+    /**
+     * Add a congressman position to the council.
+     */
+    public function addCongressman(Request $request, Council $council)
+    {
+        return $this->addDynamicPosition($request, $council, 'Congressman', 'Officer');
+    }
+
+    /**
+     * Add a justice position to the council.
+     */
+    public function addJustice(Request $request, Council $council)
+    {
+        return $this->addDynamicPosition($request, $council, 'Associate Justice', 'Officer');
+    }
+
+    /**
+     * Generic method to add dynamic positions
+     */
+    private function addDynamicPosition(Request $request, Council $council, $positionType, $positionLevel)
+    {
+        $adviser = Auth::user();
+
+        // Check if the council belongs to this adviser
+        if ($council->adviser_id !== $adviser->id) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        // Check if council is completed (closed)
+        if ($council->status === 'completed') {
+            return back()->withErrors(['error' => 'Cannot modify officers in a completed council.']);
+        }
+
+        $validated = $request->validate([
+            'position_title' => 'required|string|max:255',
+            'student_id' => 'required|exists:students,id',
+        ]);
+
+        $student = Student::with('department')->find($validated['student_id']);
+
+        // Check if student is already in a council for this academic year
+        $existingCouncilMembership = CouncilOfficer::whereHas('council', function($query) use ($council) {
+            $query->where('academic_year', $council->academic_year);
+        })->where('student_id', $validated['student_id'])->first();
+
+        if ($existingCouncilMembership) {
+            return back()->withErrors(['student_id' => 'Student is already a member of another council in the same academic year.']);
+        }
+
+        // Validate department constraints based on council type
+        if ($council->department->abbreviation === 'UNIWIDE') {
+            // For Uniwide councils, students can be from any department except UNIWIDE
+            if ($student->department->abbreviation === 'UNIWIDE') {
+                return back()->withErrors(['student_id' => 'Students from UNIWIDE department cannot be assigned to council positions.']);
+            }
+        } else {
+            // For departmental councils, student must belong to the same department
+            if ($student->department_id !== $council->department_id) {
+                return back()->withErrors(['student_id' => 'Student must belong to the same department as the council.']);
+            }
+        }
+
+        // Check if student is already assigned to this council
+        $existingAssignment = CouncilOfficer::where('council_id', $council->id)
+            ->where('student_id', $validated['student_id'])
+            ->first();
+
+        if ($existingAssignment) {
+            return back()->withErrors(['student_id' => 'Student is already assigned to this council.']);
+        }
+
+        // Check if this position already exists
+        $existingPosition = CouncilOfficer::where('council_id', $council->id)
+            ->where('position_title', $validated['position_title'])
+            ->first();
+
+        if ($existingPosition) {
+            return back()->withErrors(['position_title' => 'This position already exists.']);
+        }
+
+        // Create the position with assigned student
+        CouncilOfficer::create([
+            'council_id' => $council->id,
+            'student_id' => $validated['student_id'],
+            'position_title' => $validated['position_title'],
+            'position_level' => $positionLevel,
+        ]);
+
+        return redirect()->route('adviser.councils.show', $council)
+            ->with('success', ucfirst($positionType) . ' position created and student assigned successfully!');
+    }
+
+    /**
      * Update an officer's position.
      */
     public function updateOfficer(Request $request, Council $council, CouncilOfficer $officer)
@@ -285,6 +476,38 @@ class CouncilController extends Controller
     }
 
     /**
+     * Delete a council.
+     */
+    public function destroy(Council $council)
+    {
+        $adviser = Auth::user();
+
+        // Check if the council belongs to this adviser
+        if ($council->adviser_id !== $adviser->id) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        // Check if council has any evaluations - prevent deletion if evaluations exist
+        if ($council->hasEvaluations()) {
+            return back()->withErrors([
+                'error' => 'Cannot delete council with existing evaluations. Please clear evaluations first.'
+            ]);
+        }
+
+        // Store council name for success message
+        $councilName = $council->name;
+
+        // Delete all associated council officers first
+        $council->councilOfficers()->delete();
+
+        // Delete the council
+        $council->delete();
+
+        return redirect()->route('adviser.councils.index')
+            ->with('success', "Council '{$councilName}' has been deleted successfully!");
+    }
+
+    /**
      * Get all positions for a council (existing officers + empty positions)
      */
     private function getAllPositionsForCouncil($council)
@@ -321,19 +544,66 @@ class CouncilController extends Controller
             }
         }
 
-        // Add any coordinator positions that exist but aren't in base positions
-        $coordinatorOfficers = $council->councilOfficers->filter(function($officer) use ($basePositions) {
+        // Add any dynamic positions that exist but aren't in base positions
+        $dynamicOfficers = $council->councilOfficers->filter(function($officer) use ($basePositions) {
             return !collect($basePositions)->pluck('title')->contains($officer->position_title);
         });
 
-        foreach ($coordinatorOfficers as $officer) {
+        foreach ($dynamicOfficers as $officer) {
+            // Determine the branch based on position title
+            $branch = 'Coordinator'; // Default
+            if (str_contains(strtolower($officer->position_title), 'senator')) {
+                $branch = 'Senate';
+            } elseif (str_contains(strtolower($officer->position_title), 'representative')) {
+                $branch = 'House of Representatives';
+            } elseif (str_contains(strtolower($officer->position_title), 'justice')) {
+                $branch = 'Judicial';
+            }
+
             $allPositions->push([
                 'title' => $officer->position_title,
-                'branch' => 'Coordinator',
+                'branch' => $branch,
                 'level' => $officer->position_level,
                 'officer' => $officer,
                 'is_filled' => true,
             ]);
+        }
+
+        // Sort positions according to the required order for UNIWIDE councils
+        if ($council->department->abbreviation === 'UNIWIDE') {
+            $allPositions = $allPositions->sortBy(function($position) {
+                $branch = $position['branch'];
+                $title = $position['title'];
+
+                // Define order: Executive, Senate, House of Representatives, Judicial, Coordinator
+                $branchOrder = [
+                    'Executive' => 1,
+                    'Senate' => 2,
+                    'House of Representatives' => 3,
+                    'Judicial' => 4,
+                    'Coordinator' => 5
+                ];
+
+                $order = $branchOrder[$branch] ?? 6;
+
+                // Within Executive branch, maintain hierarchy
+                if ($branch === 'Executive') {
+                    $execOrder = [
+                        'President' => 1,
+                        'Vice President' => 2,
+                        'Secretary' => 3,
+                        'Assistant Secretary' => 4,
+                        'Treasurer' => 5,
+                        'Assistant Treasurer' => 6,
+                        'Auditor' => 7,
+                        'Public Relations Officer' => 8,
+                        'Assistant Public Relations Officer' => 9,
+                    ];
+                    return ($order * 100) + ($execOrder[$title] ?? 99);
+                }
+
+                return $order * 100;
+            });
         }
 
         return $allPositions;
@@ -421,65 +691,12 @@ class CouncilController extends Controller
             ['title' => 'Public Relations Officer', 'level' => 'Officer', 'branch' => 'Executive', 'display_title' => 'Public Relations Officer'],
             ['title' => 'Assistant Public Relations Officer', 'level' => 'Officer', 'branch' => 'Executive', 'display_title' => 'Assistant Public Relations Officer'],
 
-            // Senate - Senators (3 from each department)
-            ['title' => 'SASTE Senator 1', 'level' => 'Officer', 'branch' => 'Senate', 'display_title' => 'Senator', 'department_constraint' => 'SASTE'],
-            ['title' => 'SASTE Senator 2', 'level' => 'Officer', 'branch' => 'Senate', 'display_title' => 'Senator', 'department_constraint' => 'SASTE'],
-            ['title' => 'SASTE Senator 3', 'level' => 'Officer', 'branch' => 'Senate', 'display_title' => 'Senator', 'department_constraint' => 'SASTE'],
-            ['title' => 'SBAHM Senator 1', 'level' => 'Officer', 'branch' => 'Senate', 'display_title' => 'Senator', 'department_constraint' => 'SBAHM'],
-            ['title' => 'SBAHM Senator 2', 'level' => 'Officer', 'branch' => 'Senate', 'display_title' => 'Senator', 'department_constraint' => 'SBAHM'],
-            ['title' => 'SBAHM Senator 3', 'level' => 'Officer', 'branch' => 'Senate', 'display_title' => 'Senator', 'department_constraint' => 'SBAHM'],
-            ['title' => 'SITE Senator 1', 'level' => 'Officer', 'branch' => 'Senate', 'display_title' => 'Senator', 'department_constraint' => 'SITE'],
-            ['title' => 'SITE Senator 2', 'level' => 'Officer', 'branch' => 'Senate', 'display_title' => 'Senator', 'department_constraint' => 'SITE'],
-            ['title' => 'SITE Senator 3', 'level' => 'Officer', 'branch' => 'Senate', 'display_title' => 'Senator', 'department_constraint' => 'SITE'],
-            ['title' => 'SNAHS Senator 1', 'level' => 'Officer', 'branch' => 'Senate', 'display_title' => 'Senator', 'department_constraint' => 'SNAHS'],
-            ['title' => 'SNAHS Senator 2', 'level' => 'Officer', 'branch' => 'Senate', 'display_title' => 'Senator', 'department_constraint' => 'SNAHS'],
-            ['title' => 'SNAHS Senator 3', 'level' => 'Officer', 'branch' => 'Senate', 'display_title' => 'Senator', 'department_constraint' => 'SNAHS'],
-
-            // House of Representatives - Congressman (2 from each department)
-            ['title' => 'SASTE Congressman 1', 'level' => 'Officer', 'branch' => 'House of Representatives', 'display_title' => 'Congressman', 'department_constraint' => 'SASTE'],
-            ['title' => 'SASTE Congressman 2', 'level' => 'Officer', 'branch' => 'House of Representatives', 'display_title' => 'Congressman', 'department_constraint' => 'SASTE'],
-            ['title' => 'SBAHM Congressman 1', 'level' => 'Officer', 'branch' => 'House of Representatives', 'display_title' => 'Congressman', 'department_constraint' => 'SBAHM'],
-            ['title' => 'SBAHM Congressman 2', 'level' => 'Officer', 'branch' => 'House of Representatives', 'display_title' => 'Congressman', 'department_constraint' => 'SBAHM'],
-            ['title' => 'SITE Congressman 1', 'level' => 'Officer', 'branch' => 'House of Representatives', 'display_title' => 'Congressman', 'department_constraint' => 'SITE'],
-            ['title' => 'SITE Congressman 2', 'level' => 'Officer', 'branch' => 'House of Representatives', 'display_title' => 'Congressman', 'department_constraint' => 'SITE'],
-            ['title' => 'SNAHS Congressman 1', 'level' => 'Officer', 'branch' => 'House of Representatives', 'display_title' => 'Congressman', 'department_constraint' => 'SNAHS'],
-            ['title' => 'SNAHS Congressman 2', 'level' => 'Officer', 'branch' => 'House of Representatives', 'display_title' => 'Congressman', 'department_constraint' => 'SNAHS'],
-
-            // Judiciary Branch - Associate Justices (2 from each department)
-            ['title' => 'SASTE Justice 1', 'level' => 'Officer', 'branch' => 'Judiciary', 'display_title' => 'Associate Justice', 'department_constraint' => 'SASTE'],
-            ['title' => 'SASTE Justice 2', 'level' => 'Officer', 'branch' => 'Judiciary', 'display_title' => 'Associate Justice', 'department_constraint' => 'SASTE'],
-            ['title' => 'SBAHM Justice 1', 'level' => 'Officer', 'branch' => 'Judiciary', 'display_title' => 'Associate Justice', 'department_constraint' => 'SBAHM'],
-            ['title' => 'SBAHM Justice 2', 'level' => 'Officer', 'branch' => 'Judiciary', 'display_title' => 'Associate Justice', 'department_constraint' => 'SBAHM'],
-            ['title' => 'SITE Justice 1', 'level' => 'Officer', 'branch' => 'Judiciary', 'display_title' => 'Associate Justice', 'department_constraint' => 'SITE'],
-            ['title' => 'SITE Justice 2', 'level' => 'Officer', 'branch' => 'Judiciary', 'display_title' => 'Associate Justice', 'department_constraint' => 'SITE'],
-            ['title' => 'SNAHS Justice 1', 'level' => 'Officer', 'branch' => 'Judiciary', 'display_title' => 'Associate Justice', 'department_constraint' => 'SNAHS'],
-            ['title' => 'SNAHS Justice 2', 'level' => 'Officer', 'branch' => 'Judiciary', 'display_title' => 'Associate Justice', 'department_constraint' => 'SNAHS'],
+            // Note: Senators, Representatives, and Associate Justices are now added manually by advisers
+            // They will appear in the list only after being created through the dynamic position forms
         ];
     }
 
-    /**
-     * Validate department constraints for Uniwide council positions
-     */
-    private function validateUniwidePositionConstraints($council, $positionTitle, $student)
-    {
-        // Get the position definition to check for department constraints
-        $positions = $this->getUniversityWidePositions();
-        $position = collect($positions)->firstWhere('title', $positionTitle);
 
-        // If position has no department constraint, any student can be assigned
-        if (!isset($position['department_constraint'])) {
-            return true;
-        }
-
-        $requiredDepartment = $position['department_constraint'];
-
-        // Check if student belongs to the required department
-        if ($student->department->abbreviation !== $requiredDepartment) {
-            return "This position requires a student from {$requiredDepartment} department.";
-        }
-
-        return true;
-    }
 
     /**
      * Start evaluations for a council
@@ -524,6 +741,104 @@ class CouncilController extends Controller
         } catch (\Exception $e) {
             return redirect()->route('adviser.councils.show', $council)
                 ->with('error', 'Failed to clear evaluations: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Assign an officer as a peer evaluator
+     */
+    public function assignPeerEvaluator(Request $request, Council $council, CouncilOfficer $officer)
+    {
+        $adviser = Auth::user();
+
+        // Check if the council belongs to this adviser
+        if ($council->adviser_id !== $adviser->id) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        // Check if the officer belongs to this council
+        if ($officer->council_id !== $council->id) {
+            abort(404, 'Officer not found in this council.');
+        }
+
+        // Check if evaluations have already started
+        if ($council->hasEvaluations()) {
+            return redirect()->route('adviser.councils.show', $council)
+                ->with('error', 'Cannot assign peer evaluators after evaluations have started.');
+        }
+
+        $validated = $request->validate([
+            'peer_evaluator_level' => 'required|integer|in:1,2'
+        ]);
+
+        try {
+            DB::transaction(function () use ($council, $officer, $validated) {
+                // Check if there's already a peer evaluator at this level
+                $existingPeerEvaluator = $council->councilOfficers()
+                    ->where('is_peer_evaluator', true)
+                    ->where('peer_evaluator_level', $validated['peer_evaluator_level'])
+                    ->first();
+
+                if ($existingPeerEvaluator) {
+                    // Remove the existing peer evaluator at this level
+                    $existingPeerEvaluator->update([
+                        'is_peer_evaluator' => false,
+                        'peer_evaluator_level' => null,
+                    ]);
+                }
+
+                // Assign the new peer evaluator
+                $officer->update([
+                    'is_peer_evaluator' => true,
+                    'peer_evaluator_level' => $validated['peer_evaluator_level'],
+                ]);
+            });
+
+            $levelText = $validated['peer_evaluator_level'] === 1 ? 'Level 1' : 'Level 2';
+            return redirect()->route('adviser.councils.show', $council)
+                ->with('success', "Successfully assigned {$officer->student->first_name} {$officer->student->last_name} as {$levelText} peer evaluator.");
+
+        } catch (\Exception $e) {
+            return redirect()->route('adviser.councils.show', $council)
+                ->with('error', 'Failed to assign peer evaluator: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Remove an officer as a peer evaluator
+     */
+    public function removePeerEvaluator(Council $council, CouncilOfficer $officer)
+    {
+        $adviser = Auth::user();
+
+        // Check if the council belongs to this adviser
+        if ($council->adviser_id !== $adviser->id) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        // Check if the officer belongs to this council
+        if ($officer->council_id !== $council->id) {
+            abort(404, 'Officer not found in this council.');
+        }
+
+        // Check if evaluations have already started
+        if ($council->hasEvaluations()) {
+            return redirect()->route('adviser.councils.show', $council)
+                ->with('error', 'Cannot remove peer evaluators after evaluations have started.');
+        }
+
+        try {
+            $officer->update([
+                'is_peer_evaluator' => false,
+                'peer_evaluator_level' => null,
+            ]);
+
+            return redirect()->route('adviser.councils.show', $council)
+                ->with('success', "Successfully removed {$officer->student->first_name} {$officer->student->last_name} as peer evaluator.");
+
+        } catch (\Exception $e) {
+            return redirect()->route('adviser.councils.show', $council)
+                ->with('error', 'Failed to remove peer evaluator: ' . $e->getMessage());
         }
     }
 }

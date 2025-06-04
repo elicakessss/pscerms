@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Support\Facades\Hash;
 
 class Admin extends Authenticatable
 {
@@ -36,4 +35,3 @@ class Admin extends Authenticatable
         return $this->first_name . ' ' . $this->last_name;
     }
 }
-

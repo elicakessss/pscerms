@@ -152,10 +152,10 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 <div>
                     <label for="password" class="block text-sm font-medium text-gray-700 mb-2">
-                        PIN (6 digits)
+                        Password (6 digits)
                         <span class="text-gray-500 font-normal">(optional - defaults to 123456)</span>
                     </label>
-                    <input type="text"
+                    <input type="password"
                            id="password"
                            name="password"
                            maxlength="6"
@@ -168,7 +168,7 @@
                     @enderror
                 </div>
 
-                <!-- Remove password confirmation field since we're using a simple PIN -->
+                <!-- No confirmation field needed for password -->
             </div>
 
             <!-- Profile Picture and Description (shown for students and advisers) -->

@@ -118,14 +118,15 @@
                 <!-- Password -->
                 <div>
                     <label for="password" class="block text-sm font-medium text-gray-700 mb-2">Password (6 digits)</label>
-                    <input type="text"
+                    <input type="password"
                            id="password"
                            name="password"
                            value="{{ old('password') }}"
                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
                            placeholder="Leave blank for default (123456)"
+                           maxlength="6"
                            pattern="[0-9]{6}"
-                           title="Password must be 6 digits">
+                           title="Password must be exactly 6 digits">
                     <p class="mt-1 text-xs text-gray-500">If left blank, default password will be 123456</p>
                     @error('password')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>

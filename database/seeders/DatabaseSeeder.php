@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -12,8 +11,9 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // Call the AdminSeeder
+        // Call the seeders in order
         $this->call([
+            DepartmentSeeder::class,
             AdminSeeder::class,
         ]);
     }

@@ -220,17 +220,20 @@
 
                         <!-- New Password -->
                         <div class="form-group">
-                            <label for="password" class="form-label">New Password</label>
+                            <label for="password" class="form-label">New Password (6 digits)</label>
                             <input type="password"
                                 id="password"
                                 name="password"
                                 class="form-input"
-                                placeholder="Enter your new password"
+                                placeholder="Enter your new 6-digit password"
+                                maxlength="6"
+                                pattern="[0-9]{6}"
+                                title="Password must be exactly 6 digits"
                                 required>
                             @error('password')
                                 <p class="error-text">{{ $message }}</p>
                             @enderror
-                            <p class="help-text">Password must be at least 6 characters long.</p>
+                            <p class="help-text">Password must be exactly 6 digits.</p>
                         </div>
 
                         <!-- Confirm New Password -->
@@ -240,7 +243,10 @@
                                 id="password_confirmation"
                                 name="password_confirmation"
                                 class="form-input"
-                                placeholder="Confirm your new password"
+                                placeholder="Confirm your new 6-digit password"
+                                maxlength="6"
+                                pattern="[0-9]{6}"
+                                title="Password must be exactly 6 digits"
                                 required>
                         </div>
 

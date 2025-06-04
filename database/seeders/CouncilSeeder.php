@@ -112,39 +112,7 @@ class CouncilSeeder extends Seeder
             ['title' => 'Public Relations Officer', 'level' => 'Officer'],
             ['title' => 'Assistant Public Relations Officer', 'level' => 'Officer'],
 
-            // Senate - Senators (3 from each department)
-            ['title' => 'SASTE Senator 1', 'level' => 'Officer'],
-            ['title' => 'SASTE Senator 2', 'level' => 'Officer'],
-            ['title' => 'SASTE Senator 3', 'level' => 'Officer'],
-            ['title' => 'SBAHM Senator 1', 'level' => 'Officer'],
-            ['title' => 'SBAHM Senator 2', 'level' => 'Officer'],
-            ['title' => 'SBAHM Senator 3', 'level' => 'Officer'],
-            ['title' => 'SITE Senator 1', 'level' => 'Officer'],
-            ['title' => 'SITE Senator 2', 'level' => 'Officer'],
-            ['title' => 'SITE Senator 3', 'level' => 'Officer'],
-            ['title' => 'SNAHS Senator 1', 'level' => 'Officer'],
-            ['title' => 'SNAHS Senator 2', 'level' => 'Officer'],
-            ['title' => 'SNAHS Senator 3', 'level' => 'Officer'],
 
-            // House of Representatives - Congressman (2 from each department)
-            ['title' => 'SASTE Congressman 1', 'level' => 'Officer'],
-            ['title' => 'SASTE Congressman 2', 'level' => 'Officer'],
-            ['title' => 'SBAHM Congressman 1', 'level' => 'Officer'],
-            ['title' => 'SBAHM Congressman 2', 'level' => 'Officer'],
-            ['title' => 'SITE Congressman 1', 'level' => 'Officer'],
-            ['title' => 'SITE Congressman 2', 'level' => 'Officer'],
-            ['title' => 'SNAHS Congressman 1', 'level' => 'Officer'],
-            ['title' => 'SNAHS Congressman 2', 'level' => 'Officer'],
-
-            // Judiciary Branch - Associate Justices (2 from each department)
-            ['title' => 'SASTE Justice 1', 'level' => 'Officer'],
-            ['title' => 'SASTE Justice 2', 'level' => 'Officer'],
-            ['title' => 'SBAHM Justice 1', 'level' => 'Officer'],
-            ['title' => 'SBAHM Justice 2', 'level' => 'Officer'],
-            ['title' => 'SITE Justice 1', 'level' => 'Officer'],
-            ['title' => 'SITE Justice 2', 'level' => 'Officer'],
-            ['title' => 'SNAHS Justice 1', 'level' => 'Officer'],
-            ['title' => 'SNAHS Justice 2', 'level' => 'Officer'],
         ];
     }
 }

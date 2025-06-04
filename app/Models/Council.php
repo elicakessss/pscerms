@@ -61,7 +61,28 @@ class Council extends Model
     {
         return $this->status === 'active' &&
                $this->councilOfficers()->count() > 0 &&
-               !$this->hasEvaluations();
+               !$this->hasEvaluations() &&
+               $this->hasPeerEvaluatorsAssigned();
+    }
+
+    /**
+     * Check if peer evaluators are assigned
+     */
+    public function hasPeerEvaluatorsAssigned()
+    {
+        $peerEvaluators = $this->councilOfficers()->where('is_peer_evaluator', true)->get();
+        $level1Count = $peerEvaluators->where('peer_evaluator_level', 1)->count();
+        $level2Count = $peerEvaluators->where('peer_evaluator_level', 2)->count();
+
+        return $level1Count === 1 && $level2Count === 1;
+    }
+
+    /**
+     * Get peer evaluators for this council
+     */
+    public function getPeerEvaluators()
+    {
+        return $this->councilOfficers()->where('is_peer_evaluator', true)->with('student')->get();
     }
 
     /**
@@ -105,19 +126,14 @@ class Council extends Model
             ];
         }
 
-        // Calculate peer evaluations based on position levels
+        // Calculate peer evaluations based on assigned peer evaluators
         $officers = $this->councilOfficers;
-        $level1Officers = $officers->filter(function ($officer) {
-            return $this->getPositionLevel($officer->position_title) === 1;
-        });
-        $level2Officers = $officers->filter(function ($officer) {
-            return $this->getPositionLevel($officer->position_title) === 2;
+        $peerEvaluators = $officers->filter(function ($officer) {
+            return $officer->is_peer_evaluator;
         });
 
-        // Level 1 officers evaluate all members (except themselves)
-        // Level 2 officers evaluate only Level 1 officers
-        $peerEvaluationsTotal = ($level1Officers->count() * ($totalOfficers - 1)) +
-                               ($level2Officers->count() * $level1Officers->count());
+        // Both peer evaluators evaluate all members (except themselves)
+        $peerEvaluationsTotal = $peerEvaluators->count() * ($totalOfficers - 1);
 
         return [
             'self_completed' => $this->evaluations()->where('evaluator_type', 'self')->where('status', 'completed')->count(),

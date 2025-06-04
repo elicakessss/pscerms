@@ -53,6 +53,11 @@ Route::prefix('student')->name('student.')->group(function () {
         Route::get('/evaluation/peer/{council}/{evaluatedStudent}', [App\Http\Controllers\Student\EvaluationController::class, 'showPeer'])->name('evaluation.peer');
         Route::post('/evaluation', [App\Http\Controllers\Student\EvaluationController::class, 'store'])->name('evaluation.store');
 
+        // Leadership Certificate management
+        Route::get('/leadership-certificate/create', [StudentDashboardController::class, 'createCertificateRequest'])->name('leadership_certificate.create');
+        Route::post('/leadership-certificate', [StudentDashboardController::class, 'storeCertificateRequest'])->name('leadership_certificate.store');
+        Route::get('/leadership-certificate', [StudentDashboardController::class, 'certificateRequests'])->name('leadership_certificate.index');
+
         // Logout
         Route::post('/logout', function() {
             Auth::guard('student')->logout();
@@ -87,19 +92,34 @@ Route::prefix('adviser')->name('adviser.')->group(function () {
 
         // Council management
         Route::get('/councils', [App\Http\Controllers\Adviser\CouncilController::class, 'index'])->name('councils.index');
+        Route::get('/councils/create', [App\Http\Controllers\Adviser\CouncilController::class, 'create'])->name('councils.create');
+        Route::post('/councils', [App\Http\Controllers\Adviser\CouncilController::class, 'store'])->name('councils.store');
         Route::get('/councils/{council}', [App\Http\Controllers\Adviser\CouncilController::class, 'show'])->name('councils.show');
+        Route::delete('/councils/{council}', [App\Http\Controllers\Adviser\CouncilController::class, 'destroy'])->name('councils.destroy');
         Route::post('/councils/{council}/officers', [App\Http\Controllers\Adviser\CouncilController::class, 'assignOfficer'])->name('councils.assign_officer');
         Route::post('/councils/{council}/coordinators', [App\Http\Controllers\Adviser\CouncilController::class, 'addCoordinator'])->name('councils.add_coordinator');
+        Route::post('/councils/{council}/senators', [App\Http\Controllers\Adviser\CouncilController::class, 'addSenator'])->name('councils.add_senator');
+        Route::post('/councils/{council}/congressmen', [App\Http\Controllers\Adviser\CouncilController::class, 'addCongressman'])->name('councils.add_congressman');
+        Route::post('/councils/{council}/justices', [App\Http\Controllers\Adviser\CouncilController::class, 'addJustice'])->name('councils.add_justice');
         Route::put('/councils/{council}/officers/{officer}', [App\Http\Controllers\Adviser\CouncilController::class, 'updateOfficer'])->name('councils.update_officer');
+        Route::delete('/councils/{council}/officers/{officer}', [App\Http\Controllers\Adviser\CouncilController::class, 'removeOfficer'])->name('councils.remove_officer');
+
+        // Peer evaluator assignment
+        Route::post('/councils/{council}/officers/{officer}/assign-peer-evaluator', [App\Http\Controllers\Adviser\CouncilController::class, 'assignPeerEvaluator'])->name('councils.assign_peer_evaluator');
+        Route::delete('/councils/{council}/officers/{officer}/remove-peer-evaluator', [App\Http\Controllers\Adviser\CouncilController::class, 'removePeerEvaluator'])->name('councils.remove_peer_evaluator');
 
         // Evaluation management
         Route::get('/evaluation/{council}/{student}', [App\Http\Controllers\Adviser\EvaluationController::class, 'show'])->name('evaluation.show');
         Route::post('/evaluation', [App\Http\Controllers\Adviser\EvaluationController::class, 'store'])->name('evaluation.store');
-        Route::delete('/councils/{council}/officers/{officer}', [App\Http\Controllers\Adviser\CouncilController::class, 'removeOfficer'])->name('councils.remove_officer');
 
         // Evaluation management
         Route::post('/councils/{council}/start-evaluations', [App\Http\Controllers\Adviser\CouncilController::class, 'startEvaluations'])->name('councils.start_evaluations');
         Route::delete('/councils/{council}/clear-evaluations', [App\Http\Controllers\Adviser\CouncilController::class, 'clearEvaluations'])->name('councils.clear_evaluations');
+
+        // Leadership Certificate management
+        Route::get('/leadership-certificate/{request}', [AdviserDashboardController::class, 'viewCertificateRequest'])->name('leadership_certificate.show');
+        Route::post('/leadership-certificate/{request}/approve', [AdviserDashboardController::class, 'approveCertificateRequest'])->name('leadership_certificate.approve');
+        Route::post('/leadership-certificate/{request}/dismiss', [AdviserDashboardController::class, 'dismissCertificateRequest'])->name('leadership_certificate.dismiss');
 
         // Logout
         Route::post('/logout', function() {
@@ -132,6 +152,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/user_management/{type}/{id}/edit', [AdminUserManagementController::class, 'edit'])->name('user_management.edit');
         Route::put('/user_management/{type}/{id}', [AdminUserManagementController::class, 'update'])->name('user_management.update');
         Route::delete('/user_management/{type}/{id}', [AdminUserManagementController::class, 'destroy'])->name('user_management.destroy');
+
+        // Department management
+        Route::resource('departments', App\Http\Controllers\Admin\DepartmentController::class);
 
         // Council management
         Route::resource('council_management', AdminCouncilManagementController::class)->parameters([

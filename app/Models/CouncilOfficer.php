@@ -19,6 +19,8 @@ class CouncilOfficer extends Model
         'student_id',
         'position_title',
         'position_level',
+        'is_peer_evaluator',
+        'peer_evaluator_level',
         'self_score',
         'peer_score',
         'adviser_score',
@@ -33,6 +35,7 @@ class CouncilOfficer extends Model
      * @var array<string, string>
      */
     protected $casts = [
+        'is_peer_evaluator' => 'boolean',
         'self_score' => 'decimal:2',
         'peer_score' => 'decimal:2',
         'adviser_score' => 'decimal:2',
@@ -74,6 +77,27 @@ class CouncilOfficer extends Model
         } else {
             return 'Needs Improvement';
         }
+    }
+
+    /**
+     * Check if this officer can be assigned as a peer evaluator
+     */
+    public function canBeAssignedAsPeerEvaluator()
+    {
+        // Can't assign if evaluations have already started
+        return !$this->council->hasEvaluations();
+    }
+
+    /**
+     * Get the peer evaluator level display text
+     */
+    public function getPeerEvaluatorLevelTextAttribute()
+    {
+        if (!$this->is_peer_evaluator) {
+            return null;
+        }
+
+        return $this->peer_evaluator_level === 1 ? 'Level 1' : 'Level 2';
     }
 
     /**

@@ -68,7 +68,7 @@ class StudentManagementController extends Controller
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
             'email' => 'required|email|max:255|unique:students,email',
-            'password' => 'nullable|string|min:6',
+            'password' => 'nullable|digits:6',
             'profile_picture' => 'nullable|image|max:2048',
             'description' => 'nullable|string',
         ];

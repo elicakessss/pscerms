@@ -86,6 +86,12 @@
                         </a>
                     </li>
                     <li>
+                        <a href="{{ route('student.leadership_certificate.index') }}" class="flex items-center px-6 py-3 text-white hover:bg-green-700 {{ request()->routeIs('student.leadership_certificate.*') ? 'bg-green-700' : '' }}">
+                            <i class="fas fa-certificate w-5 h-5 mr-3"></i>
+                            <span>Certificate Requests</span>
+                        </a>
+                    </li>
+                    <li>
                         <a href="{{ route('student.account.index') }}" class="flex items-center px-6 py-3 text-white hover:bg-green-700 {{ request()->routeIs('student.account.*') ? 'bg-green-700' : '' }}">
                             <i class="fas fa-user-circle w-5 h-5 mr-3"></i>
                             <span>Account</span>
@@ -110,30 +116,32 @@
         <div class="flex-1 flex flex-col overflow-hidden">
             <!-- Top Navigation -->
             <header class="header-gradient shadow">
-                <div class="px-6 py-4 flex items-center justify-between">
+                <div class="px-6 py-4">
                     <h2 class="text-xl font-semibold text-white">@yield('page-title', 'Dashboard')</h2>
-                    <div class="flex items-center space-x-4">
-                        <!-- Notifications -->
-                        <div class="relative">
-                            <button class="text-green-100 hover:text-white">
-                                <i class="fas fa-bell"></i>
-                            </button>
-                        </div>
-                    </div>
                 </div>
             </header>
 
             <!-- Page Content -->
             <main class="flex-1 overflow-y-auto p-6 bg-gray-50">
                 @if(session('success'))
-                    <div class="mb-4 bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded" role="alert">
-                        <p>{{ session('success') }}</p>
+                    <div id="success-message" class="mb-4 bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded transition-opacity duration-500" role="alert">
+                        <div class="flex justify-between items-center">
+                            <p>{{ session('success') }}</p>
+                            <button onclick="closeMessage('success-message')" class="text-green-700 hover:text-green-900">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
                     </div>
                 @endif
 
                 @if(session('error'))
-                    <div class="mb-4 bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded" role="alert">
-                        <p>{{ session('error') }}</p>
+                    <div id="error-message" class="mb-4 bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded transition-opacity duration-500" role="alert">
+                        <div class="flex justify-between items-center">
+                            <p>{{ session('error') }}</p>
+                            <button onclick="closeMessage('error-message')" class="text-red-700 hover:text-red-900">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
                     </div>
                 @endif
 
@@ -141,6 +149,33 @@
             </main>
         </div>
     </div>
+
+    <script>
+        // Auto-hide messages after 5 seconds
+        function closeMessage(messageId) {
+            const message = document.getElementById(messageId);
+            if (message) {
+                message.style.opacity = '0';
+                setTimeout(() => {
+                    message.remove();
+                }, 500);
+            }
+        }
+
+        // Auto-hide success and error messages
+        document.addEventListener('DOMContentLoaded', function() {
+            const successMessage = document.getElementById('success-message');
+            const errorMessage = document.getElementById('error-message');
+
+            if (successMessage) {
+                setTimeout(() => closeMessage('success-message'), 5000);
+            }
+
+            if (errorMessage) {
+                setTimeout(() => closeMessage('error-message'), 5000);
+            }
+        });
+    </script>
 </body>
 </html>
 

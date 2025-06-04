@@ -17,7 +17,7 @@ class LoginController extends Controller
     {
         $credentials = $request->validate([
             'id_number' => 'required',
-            'password' => 'required',
+            'password' => 'required|digits:6',
             'role' => 'required|in:student,adviser,admin',
         ]);
 
@@ -35,12 +35,6 @@ class LoginController extends Controller
 
         if (Auth::guard($guard)->attempt($credentials)) {
             $request->session()->regenerate();
-
-            // Debug information
-            \Log::info('User authenticated with guard: ' . $guard);
-            \Log::info('User role: ' . $role);
-            \Log::info('Authenticated user: ' . Auth::guard($guard)->user()->id);
-            \Log::info('Session ID: ' . $request->session()->getId());
 
             // Redirect based on role
             if ($role === 'student') {
@@ -67,7 +61,3 @@ class LoginController extends Controller
         return redirect()->route('login');
     }
 }
-
-
-
-

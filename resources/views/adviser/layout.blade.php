@@ -117,7 +117,7 @@
                 <a href="{{ route('adviser.student_management.index') }}"
                    class="flex items-center space-x-3 p-3 rounded-lg hover:bg-green-600 transition-colors nav-link {{ request()->routeIs('adviser.student_management.*') ? 'active-nav' : '' }}">
                     <i class="fas fa-users w-5"></i>
-                    <span>Student Management</span>
+                    <span>Students</span>
                 </a>
 
                 <a href="{{ route('adviser.account.index') }}"
@@ -153,22 +153,195 @@
 
             <!-- Page Content -->
             <main class="flex-1 overflow-y-auto p-6">
-                @if(session('success'))
-                    <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-6" role="alert">
-                        <p class="text-base">{{ session('success') }}</p>
-                    </div>
-                @endif
-
-                @if(session('error'))
-                    <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6" role="alert">
-                        <p class="text-base">{{ session('error') }}</p>
-                    </div>
-                @endif
-
                 @yield('content')
             </main>
         </div>
     </div>
+
+    <!-- Notification Container -->
+    <div id="notification-container" class="fixed top-4 right-4 z-50 space-y-2"></div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirmation-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-lg shadow-xl max-w-md w-full">
+                <div class="p-6">
+                    <div class="flex items-center mb-4">
+                        <div id="modal-icon" class="w-12 h-12 rounded-full flex items-center justify-center mr-4">
+                            <i id="modal-icon-class" class="text-2xl"></i>
+                        </div>
+                        <div>
+                            <h3 id="modal-title" class="text-lg font-medium text-gray-900"></h3>
+                            <p id="modal-message" class="text-sm text-gray-500 mt-1"></p>
+                        </div>
+                    </div>
+                    <div class="flex justify-end space-x-3">
+                        <button id="modal-cancel" type="button"
+                                class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                            Cancel
+                        </button>
+                        <button id="modal-confirm" type="button"
+                                class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            Confirm
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        // Global notification system
+        function showNotification(message, type = 'success', duration = 5000) {
+            const container = document.getElementById('notification-container');
+            const notificationId = 'notification-' + Date.now();
+
+            const typeConfig = {
+                success: {
+                    bgColor: 'bg-green-500',
+                    icon: 'fas fa-check-circle',
+                    textColor: 'text-white'
+                },
+                error: {
+                    bgColor: 'bg-red-500',
+                    icon: 'fas fa-exclamation-circle',
+                    textColor: 'text-white'
+                },
+                warning: {
+                    bgColor: 'bg-yellow-500',
+                    icon: 'fas fa-exclamation-triangle',
+                    textColor: 'text-white'
+                },
+                info: {
+                    bgColor: 'bg-blue-500',
+                    icon: 'fas fa-info-circle',
+                    textColor: 'text-white'
+                }
+            };
+
+            const config = typeConfig[type] || typeConfig.success;
+
+            const notification = document.createElement('div');
+            notification.id = notificationId;
+            notification.className = `${config.bgColor} ${config.textColor} px-6 py-4 rounded-lg shadow-lg transform translate-x-full transition-transform duration-300 ease-in-out max-w-sm`;
+            notification.innerHTML = `
+                <div class="flex items-center">
+                    <i class="${config.icon} mr-3"></i>
+                    <span class="flex-1 text-sm font-medium">${message}</span>
+                    <button onclick="removeNotification('${notificationId}')" class="ml-3 ${config.textColor} hover:opacity-75">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+
+            container.appendChild(notification);
+
+            // Trigger animation
+            setTimeout(() => {
+                notification.classList.remove('translate-x-full');
+            }, 100);
+
+            // Auto remove
+            setTimeout(() => {
+                removeNotification(notificationId);
+            }, duration);
+        }
+
+        function removeNotification(notificationId) {
+            const notification = document.getElementById(notificationId);
+            if (notification) {
+                notification.classList.add('translate-x-full');
+                setTimeout(() => {
+                    notification.remove();
+                }, 300);
+            }
+        }
+
+        // Confirmation modal system
+        function showConfirmation(title, message, onConfirm, type = 'question') {
+            const modal = document.getElementById('confirmation-modal');
+            const modalTitle = document.getElementById('modal-title');
+            const modalMessage = document.getElementById('modal-message');
+            const modalIcon = document.getElementById('modal-icon');
+            const modalIconClass = document.getElementById('modal-icon-class');
+            const confirmBtn = document.getElementById('modal-confirm');
+            const cancelBtn = document.getElementById('modal-cancel');
+
+            const typeConfig = {
+                question: {
+                    bgColor: 'bg-blue-100',
+                    iconColor: 'text-blue-600',
+                    icon: 'fas fa-question-circle',
+                    confirmColor: 'bg-blue-600 hover:bg-blue-700'
+                },
+                warning: {
+                    bgColor: 'bg-yellow-100',
+                    iconColor: 'text-yellow-600',
+                    icon: 'fas fa-exclamation-triangle',
+                    confirmColor: 'bg-yellow-600 hover:bg-yellow-700'
+                },
+                danger: {
+                    bgColor: 'bg-red-100',
+                    iconColor: 'text-red-600',
+                    icon: 'fas fa-exclamation-circle',
+                    confirmColor: 'bg-red-600 hover:bg-red-700'
+                }
+            };
+
+            const config = typeConfig[type] || typeConfig.question;
+
+            modalTitle.textContent = title;
+            modalMessage.textContent = message;
+            modalIcon.className = `w-12 h-12 rounded-full flex items-center justify-center mr-4 ${config.bgColor}`;
+            modalIconClass.className = `text-2xl ${config.iconColor} ${config.icon}`;
+            confirmBtn.className = `px-4 py-2 text-sm font-medium text-white border border-transparent rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 ${config.confirmColor}`;
+
+            modal.classList.remove('hidden');
+
+            // Handle confirm
+            const handleConfirm = () => {
+                modal.classList.add('hidden');
+                if (onConfirm) onConfirm();
+                confirmBtn.removeEventListener('click', handleConfirm);
+                cancelBtn.removeEventListener('click', handleCancel);
+            };
+
+            // Handle cancel
+            const handleCancel = () => {
+                modal.classList.add('hidden');
+                confirmBtn.removeEventListener('click', handleConfirm);
+                cancelBtn.removeEventListener('click', handleCancel);
+            };
+
+            confirmBtn.addEventListener('click', handleConfirm);
+            cancelBtn.addEventListener('click', handleCancel);
+
+            // Close on outside click
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    handleCancel();
+                }
+            });
+        }
+
+        // Show session messages as notifications
+        document.addEventListener('DOMContentLoaded', function() {
+            @if(session('success'))
+                showNotification('{{ session('success') }}', 'success');
+            @endif
+
+            @if(session('error'))
+                showNotification('{{ session('error') }}', 'error');
+            @endif
+
+            @if(session('warning'))
+                showNotification('{{ session('warning') }}', 'warning');
+            @endif
+
+            @if(session('info'))
+                showNotification('{{ session('info') }}', 'info');
+            @endif
+        });
+    </script>
 </body>
 </html>
 

@@ -19,6 +19,9 @@ return new class extends Migration
             $table->foreignId('adviser_id')->constrained('advisers');
             $table->foreignId('department_id')->constrained();
             $table->timestamps();
+
+            // Add unique constraint for department_id and academic_year combination
+            $table->unique(['department_id', 'academic_year'], 'councils_department_academic_year_unique');
         });
     }
 

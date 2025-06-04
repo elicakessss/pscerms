@@ -110,13 +110,19 @@
                 <a href="{{ route('admin.user_management.index') }}"
                    class="flex items-center space-x-3 p-3 rounded-lg hover:bg-green-600 transition-colors nav-link {{ request()->routeIs('admin.user_management.*') ? 'active-nav' : '' }}">
                     <i class="fas fa-users w-5"></i>
-                    <span>User Management</span>
+                    <span>Users</span>
+                </a>
+
+                <a href="{{ route('admin.departments.index') }}"
+                   class="flex items-center space-x-3 p-3 rounded-lg hover:bg-green-600 transition-colors nav-link {{ request()->routeIs('admin.departments.*') ? 'active-nav' : '' }}">
+                    <i class="fas fa-building w-5"></i>
+                    <span>Departments</span>
                 </a>
 
                 <a href="{{ route('admin.council_management.index') }}"
                    class="flex items-center space-x-3 p-3 rounded-lg hover:bg-green-600 transition-colors nav-link {{ request()->routeIs('admin.council_management.*') ? 'active-nav' : '' }}">
                     <i class="fas fa-user-tie w-5"></i>
-                    <span>Council Management</span>
+                    <span>Councils</span>
                 </a>
 
                 <a href="{{ route('admin.account.index') }}"

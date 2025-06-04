@@ -248,6 +248,24 @@
                     <form method="POST" action="/login">
                         @csrf
 
+                        <!-- Role Selection -->
+                        <div class="form-group">
+                            <label for="role" class="form-label">Role</label>
+                            <select id="role"
+                                    name="role"
+                                    class="form-input"
+                                    required
+                                    autofocus>
+                                <option value="" disabled selected>-- Select Role --</option>
+                                <option value="student">Student</option>
+                                <option value="adviser">Adviser</option>
+                                <option value="admin">Administrator</option>
+                            </select>
+                            @error('role')
+                                <p class="error-text">{{ $message }}</p>
+                            @enderror
+                        </div>
+
                         <!-- ID Number -->
                         <div class="form-group">
                             <label for="id_number" class="form-label">ID Number</label>
@@ -257,8 +275,7 @@
                                 value="{{ old('id_number') }}"
                                 class="form-input"
                                 placeholder="Enter your ID number"
-                                required
-                                autofocus>
+                                required>
                             @error('id_number')
                                 <p class="error-text">{{ $message }}</p>
                             @enderror
@@ -266,31 +283,17 @@
 
                         <!-- Password -->
                         <div class="form-group">
-                            <label for="password" class="form-label">Password</label>
+                            <label for="password" class="form-label">Password (6 digits)</label>
                             <input type="password"
                                 id="password"
                                 name="password"
                                 class="form-input"
-                                placeholder="Enter your password"
+                                placeholder="Enter your 6-digit password"
+                                maxlength="6"
+                                pattern="[0-9]{6}"
+                                title="Password must be exactly 6 digits"
                                 required>
                             @error('password')
-                                <p class="error-text">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <!-- Role Selection -->
-                        <div class="form-group">
-                            <label for="role" class="form-label">Role</label>
-                            <select id="role"
-                                    name="role"
-                                    class="form-input"
-                                    required>
-                                <option value="" disabled selected>-- Select Role --</option>
-                                <option value="student">Student</option>
-                                <option value="adviser">Adviser</option>
-                                <option value="admin">Administrator</option>
-                            </select>
-                            @error('role')
                                 <p class="error-text">{{ $message }}</p>
                             @enderror
                         </div>

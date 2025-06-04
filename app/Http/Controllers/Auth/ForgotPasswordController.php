@@ -62,7 +62,7 @@ class ForgotPasswordController extends Controller
         $request->validate([
             'role' => 'required|in:student,adviser,admin',
             'id_number' => 'required|string',
-            'password' => 'required|string|min:6|confirmed',
+            'password' => 'required|digits:6|confirmed',
         ]);
 
         // Find user based on role and ID number

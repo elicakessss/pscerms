@@ -51,6 +51,14 @@ class Student extends Authenticatable
     }
 
     /**
+     * Get the leadership certificate requests for the student.
+     */
+    public function leadershipCertificateRequests()
+    {
+        return $this->hasMany(LeadershipCertificateRequest::class);
+    }
+
+    /**
      * Check if student is already in a council for the given academic year.
      */
     public function isInCouncilForAcademicYear($academicYear)

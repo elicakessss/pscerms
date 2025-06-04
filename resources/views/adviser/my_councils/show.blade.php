@@ -1,18 +1,18 @@
 @extends('adviser.layout')
 
 @section('title', 'Council Details - PSCERMS')
-@section('page-title', $council->name)
-
-@section('header-actions')
-<div class="flex items-center space-x-4">
-    <a href="{{ route('adviser.councils.index') }}"
-       class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-        <i class="fas fa-arrow-left mr-2"></i>Back to Councils
-    </a>
-</div>
-@endsection
+@section('page-title', 'Council Details')
 
 @section('content')
+<div class="flex justify-between items-center mb-6">
+    <h1 class="text-2xl font-bold text-gray-800">Council Details</h1>
+    <div class="flex space-x-3">
+        <a href="{{ route('adviser.councils.index') }}" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg flex items-center">
+            <i class="fas fa-arrow-left mr-2"></i> Back to Councils
+        </a>
+    </div>
+</div>
+
 <!-- Success Message -->
 @if(session('success'))
     <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-6">
@@ -20,82 +20,163 @@
     </div>
 @endif
 
-<!-- Council Information -->
-<div class="bg-white rounded-lg shadow mb-6">
-    <div class="px-6 py-4 bg-green-600 text-white rounded-t-lg">
-        <h3 class="text-lg font-semibold text-white">Council Information</h3>
-    </div>
-    <div class="p-6">
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div>
-                <h4 class="text-sm font-medium text-gray-500">Council Name</h4>
-                <p class="text-lg font-semibold text-gray-900 mt-1">{{ $council->name }}</p>
-            </div>
-            <div>
-                <h4 class="text-sm font-medium text-gray-500">Academic Year</h4>
-                <p class="text-lg font-semibold text-gray-900 mt-1">{{ $council->academic_year }}</p>
-            </div>
-            <div>
-                <h4 class="text-sm font-medium text-gray-500">Status</h4>
-                <div class="mt-1">
-                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $council->status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' }}">
-                        <div class="w-1.5 h-1.5 rounded-full mr-1 {{ $council->status === 'active' ? 'bg-green-400' : 'bg-gray-400' }}"></div>
-                        {{ ucfirst($council->status) }}
-                    </span>
+<div class="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200">
+    <div class="md:flex">
+        <!-- Council Icon and Basic Info -->
+        <div class="md:w-1/3 bg-gray-50 p-6 border-b md:border-b-0 md:border-r border-gray-200">
+            <div class="flex flex-col items-center text-center">
+                <!-- Council Icon -->
+                <div class="h-32 w-32 rounded-full bg-green-100 flex items-center justify-center mb-4">
+                    <i class="fas fa-users text-green-600 text-5xl"></i>
+                </div>
+
+                <h2 class="text-xl font-bold text-gray-800">{{ $council->name }}</h2>
+                <p class="text-gray-600 mb-2">{{ $council->academic_year }}</p>
+
+                <div class="mb-4">
+                    @if($council->status === 'active')
+                        <span class="inline-flex px-3 py-1 text-sm font-semibold rounded-full bg-green-100 text-green-800">
+                            Active
+                        </span>
+                    @else
+                        <span class="inline-flex px-3 py-1 text-sm font-semibold rounded-full bg-gray-100 text-gray-800">
+                            Completed
+                        </span>
+                    @endif
+                </div>
+
+                <div class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium mb-4">
+                    {{ $council->department->abbreviation }} - {{ $council->department->name }}
+                </div>
+
+                <!-- Quick Stats -->
+                <div class="w-full space-y-3">
+                    <div class="flex items-center justify-between p-2 bg-blue-50 rounded-lg">
+                        <div class="flex items-center">
+                            <i class="fas fa-users text-blue-600 mr-2 text-sm"></i>
+                            <span class="text-xs font-medium text-gray-700">Officers</span>
+                        </div>
+                        <span class="text-sm font-bold text-blue-600">{{ $council->councilOfficers->count() }}</span>
+                    </div>
+
+                    <div class="flex items-center justify-between p-2 bg-green-50 rounded-lg">
+                        <div class="flex items-center">
+                            <i class="fas fa-check-circle text-green-600 mr-2 text-sm"></i>
+                            <span class="text-xs font-medium text-gray-700">Filled</span>
+                        </div>
+                        <span class="text-sm font-bold text-green-600">{{ $allPositions->where('is_filled', true)->count() }}</span>
+                    </div>
+
+                    <div class="flex items-center justify-between p-2 bg-yellow-50 rounded-lg">
+                        <div class="flex items-center">
+                            <i class="fas fa-user-plus text-yellow-600 mr-2 text-sm"></i>
+                            <span class="text-xs font-medium text-gray-700">Vacant</span>
+                        </div>
+                        <span class="text-sm font-bold text-yellow-600">{{ $allPositions->where('is_filled', false)->count() }}</span>
+                    </div>
                 </div>
             </div>
-            <div>
-                <h4 class="text-sm font-medium text-gray-500">Department</h4>
-                <p class="text-lg font-semibold text-gray-900 mt-1">{{ $council->department->abbreviation }}</p>
+        </div>
+
+        <!-- Council Details -->
+        <div class="md:w-2/3 p-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">Council Information</h3>
+
+            <div class="space-y-4">
+                <!-- Department Information -->
+                <div>
+                    <h4 class="text-sm font-medium text-gray-500 mb-1">Department</h4>
+                    <div class="flex items-center">
+                        <div class="p-2 bg-green-100 rounded-lg mr-3">
+                            <i class="fas fa-building text-green-600"></i>
+                        </div>
+                        <div>
+                            <p class="text-gray-800 font-medium">{{ $council->department->name }}</p>
+                            <p class="text-sm text-gray-500">{{ $council->department->abbreviation }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Created & Updated -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <h4 class="text-sm font-medium text-gray-500 mb-1">Created At</h4>
+                        <p class="text-gray-800">{{ $council->created_at->format('F j, Y, g:i a') }}</p>
+                    </div>
+                    <div>
+                        <h4 class="text-sm font-medium text-gray-500 mb-1">Last Updated</h4>
+                        <p class="text-gray-800">{{ $council->updated_at->format('F j, Y, g:i a') }}</p>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="pt-4 border-t border-gray-200">
+                    <h4 class="text-sm font-medium text-gray-500 mb-3">Actions</h4>
+                    <div class="flex space-x-3">
+                        @if($council->status === 'active')
+                            <form action="{{ route('adviser.councils.destroy', $council) }}" method="POST" class="inline" onsubmit="return confirm('Are you sure you want to delete this council? This action cannot be undone.');">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm">
+                                    <i class="fas fa-trash mr-2"></i> Delete Council
+                                </button>
+                            </form>
+                        @endif
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Tab Navigation -->
-<div class="bg-white rounded-lg shadow">
-    <div class="border-b border-gray-200">
-        <nav class="-mb-px flex">
-            <button onclick="showTab('officers')"
-                    id="officers-tab"
-                    class="tab-button py-4 px-6 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 focus:outline-none focus:text-gray-700 focus:border-gray-300 active">
-                <i class="fas fa-users mr-2"></i>
-                Officers ({{ $council->councilOfficers->count() }})
-            </button>
-            <button onclick="showTab('evaluations')"
-                    id="evaluations-tab"
-                    class="tab-button py-4 px-6 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 focus:outline-none focus:text-gray-700 focus:border-gray-300">
-                <i class="fas fa-chart-line mr-2"></i>
-                Evaluations ({{ $council->councilOfficers->whereNotNull('final_score')->count() }})
-            </button>
-        </nav>
+<!-- Council Management Section with Toggle -->
+<div class="bg-white rounded-lg shadow-sm border border-gray-200 mt-6">
+    <!-- Toggle Header -->
+    <div class="border-b border-gray-200 p-6">
+        <div class="flex items-center">
+            <div class="inline-flex bg-gray-100 rounded-lg p-1">
+                <button id="officers-toggle"
+                        onclick="showSection('officers')"
+                        class="toggle-btn flex items-center px-6 py-3 rounded-md text-sm font-medium transition-all duration-200 bg-white text-green-600 shadow-sm">
+                    <i class="fas fa-users mr-2"></i>
+                    Council Officers
+                </button>
+                <button id="evaluations-toggle"
+                        onclick="showSection('evaluations')"
+                        class="toggle-btn flex items-center px-6 py-3 rounded-md text-sm font-medium transition-all duration-200 text-gray-600 hover:text-gray-800">
+                    <i class="fas fa-chart-line mr-2"></i>
+                    Evaluation Progress
+                </button>
+            </div>
+        </div>
     </div>
 
-    <!-- Officers Tab Content -->
-    <div id="officers-content" class="tab-content">
+    <!-- Officers Section Content -->
+    <div id="officers-section" class="section-content">
         <div class="p-6">
-            @if($council->councilOfficers->count() > 0 || $allPositions->count() > 0)
-                <!-- Officers Summary -->
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                    <div class="bg-blue-50 p-4 rounded-lg">
-                        <div class="text-2xl font-bold text-blue-900">{{ $allPositions->count() }}</div>
-                        <div class="text-sm text-blue-700">Total Positions</div>
-                    </div>
-                    <div class="bg-green-50 p-4 rounded-lg">
-                        <div class="text-2xl font-bold text-green-900">{{ $allPositions->where('is_filled', true)->count() }}</div>
-                        <div class="text-sm text-green-700">Filled Positions</div>
-                    </div>
-                    <div class="bg-yellow-50 p-4 rounded-lg">
-                        <div class="text-2xl font-bold text-yellow-900">{{ $allPositions->where('is_filled', false)->count() }}</div>
-                        <div class="text-sm text-yellow-700">Vacant Positions</div>
-                    </div>
-                    <div class="bg-purple-50 p-4 rounded-lg">
-                        <div class="text-2xl font-bold text-purple-900">
-                            {{ $allPositions->count() > 0 ? number_format(($allPositions->where('is_filled', true)->count() / $allPositions->count()) * 100, 1) : '0.0' }}%
-                        </div>
-                        <div class="text-sm text-purple-700">Fill Rate</div>
-                    </div>
+
+        @if($council->councilOfficers->count() > 0 || $allPositions->count() > 0)
+            <!-- Officers Summary -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <div class="bg-blue-50 p-4 rounded-lg">
+                    <div class="text-2xl font-bold text-blue-900">{{ $allPositions->count() }}</div>
+                    <div class="text-sm text-blue-700">Total Positions</div>
                 </div>
+                <div class="bg-green-50 p-4 rounded-lg">
+                    <div class="text-2xl font-bold text-green-900">{{ $allPositions->where('is_filled', true)->count() }}</div>
+                    <div class="text-sm text-green-700">Filled Positions</div>
+                </div>
+                <div class="bg-yellow-50 p-4 rounded-lg">
+                    <div class="text-2xl font-bold text-yellow-900">{{ $allPositions->where('is_filled', false)->count() }}</div>
+                    <div class="text-sm text-yellow-700">Vacant Positions</div>
+                </div>
+                <div class="bg-purple-50 p-4 rounded-lg">
+                    <div class="text-2xl font-bold text-purple-900">
+                        {{ $allPositions->count() > 0 ? number_format(($allPositions->where('is_filled', true)->count() / $allPositions->count()) * 100, 1) : '0.0' }}%
+                    </div>
+                    <div class="text-sm text-purple-700">Fill Rate</div>
+                </div>
+            </div>
 
                 <!-- Officers Table -->
                 <div class="overflow-x-auto">
@@ -168,10 +249,18 @@
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         @if($position['is_filled'])
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                                <i class="fas fa-check-circle mr-1"></i>
-                                                Filled
-                                            </span>
+                                            <div class="space-y-1">
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                    <i class="fas fa-check-circle mr-1"></i>
+                                                    Filled
+                                                </span>
+                                                @if($position['officer']->is_peer_evaluator)
+                                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                        <i class="fas fa-user-check mr-1"></i>
+                                                        Peer Evaluator L{{ $position['officer']->peer_evaluator_level }}
+                                                    </span>
+                                                @endif
+                                            </div>
                                         @else
                                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
                                                 <i class="fas fa-user-plus mr-1"></i>
@@ -187,6 +276,63 @@
                                                 <i class="fas fa-eye mr-1"></i>
                                                 View
                                             </a>
+
+                                            <!-- Peer Evaluator Assignment Dropdown -->
+                                            @if(!$council->hasEvaluations())
+                                                <div class="relative inline-block text-left">
+                                                    <button type="button"
+                                                            onclick="toggleDropdown('peer-dropdown-{{ $position['officer']->id }}')"
+                                                            class="inline-flex items-center px-3 py-1.5 bg-indigo-600 text-white text-xs rounded hover:bg-indigo-700 transition-colors">
+                                                        <i class="fas fa-user-cog mr-1"></i>
+                                                        Peer Evaluator
+                                                        <i class="fas fa-chevron-down ml-1"></i>
+                                                    </button>
+
+                                                    <div id="peer-dropdown-{{ $position['officer']->id }}"
+                                                         class="hidden absolute right-0 mt-1 w-48 bg-white rounded-md shadow-lg border border-gray-200 z-10">
+                                                        <div class="py-1">
+                                                            @if($position['officer']->is_peer_evaluator)
+                                                                <!-- Current Status -->
+                                                                <div class="px-4 py-2 text-xs text-gray-500 border-b">
+                                                                    Currently: Level {{ $position['officer']->peer_evaluator_level }}
+                                                                </div>
+                                                                <!-- Remove Assignment -->
+                                                                <form action="{{ route('adviser.councils.remove_peer_evaluator', [$council, $position['officer']]) }}" method="POST">
+                                                                    @csrf
+                                                                    @method('DELETE')
+                                                                    <button type="submit"
+                                                                            onclick="return confirm('Are you sure you want to remove this peer evaluator assignment?')"
+                                                                            class="w-full text-left px-4 py-2 text-xs text-red-700 hover:bg-red-50 flex items-center">
+                                                                        <i class="fas fa-user-minus mr-2"></i>
+                                                                        Remove Assignment
+                                                                    </button>
+                                                                </form>
+                                                            @else
+                                                                <!-- Assign Level 1 -->
+                                                                <form action="{{ route('adviser.councils.assign_peer_evaluator', [$council, $position['officer']]) }}" method="POST">
+                                                                    @csrf
+                                                                    <input type="hidden" name="peer_evaluator_level" value="1">
+                                                                    <button type="submit"
+                                                                            class="w-full text-left px-4 py-2 text-xs text-blue-700 hover:bg-blue-50 flex items-center">
+                                                                        <i class="fas fa-user-plus mr-2"></i>
+                                                                        Assign as Level 1
+                                                                    </button>
+                                                                </form>
+                                                                <!-- Assign Level 2 -->
+                                                                <form action="{{ route('adviser.councils.assign_peer_evaluator', [$council, $position['officer']]) }}" method="POST">
+                                                                    @csrf
+                                                                    <input type="hidden" name="peer_evaluator_level" value="2">
+                                                                    <button type="submit"
+                                                                            class="w-full text-left px-4 py-2 text-xs text-purple-700 hover:bg-purple-50 flex items-center">
+                                                                        <i class="fas fa-user-plus mr-2"></i>
+                                                                        Assign as Level 2
+                                                                    </button>
+                                                                </form>
+                                                            @endif
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            @endif
 
                                             <!-- Remove Button -->
                                             <button onclick="confirmRemoveOfficer({{ $position['officer']->id }}, '{{ $position['officer']->student->first_name }} {{ $position['officer']->student->last_name }}')"
@@ -241,65 +387,254 @@
                     </table>
                 </div>
 
-                <!-- Add Coordinator Section -->
-                <div class="mt-8 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                    <h4 class="text-lg font-semibold text-gray-900 mb-4">Add Coordinator Position</h4>
-                    <form action="{{ route('adviser.councils.add_coordinator', $council) }}" method="POST" class="space-y-3">
-                        @csrf
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            <div>
-                                <label for="coordinator_title" class="block text-sm font-medium text-gray-700 mb-1">Position Title</label>
-                                <input type="text"
-                                       name="coordinator_title"
-                                       id="coordinator_title"
-                                       class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('coordinator_title') border-red-500 @enderror"
-                                       placeholder="e.g., Academic Coordinator, Sports Coordinator"
-                                       value="{{ old('coordinator_title') }}"
-                                       required>
-                                @error('coordinator_title')
-                                    <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                                @enderror
+                @if($council->department->abbreviation === 'UNIWIDE')
+                    <!-- Dynamic Position Forms - Side by Side Layout -->
+                    <div class="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- Add Senator Section -->
+                        <div class="p-4 bg-green-50 border border-green-200 rounded-lg">
+                            <h4 class="text-lg font-semibold text-gray-900 mb-4">Add Senator Position</h4>
+                            <form action="{{ route('adviser.councils.add_senator', $council) }}" method="POST" class="space-y-3">
+                                @csrf
+                                <div>
+                                    <label for="senator_title" class="block text-sm font-medium text-gray-700 mb-1">Position Title</label>
+                                    <input type="text"
+                                           name="position_title"
+                                           id="senator_title"
+                                           class="w-full border border-gray-300 rounded-lg px-3 py-2 bg-gray-100 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent @error('position_title') border-red-500 @enderror"
+                                           value="Senator"
+                                           readonly
+                                           required>
+                                    @error('position_title')
+                                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                                    @enderror
+                                    <p class="text-xs text-gray-500 mt-1">Position title is fixed as "Senator"</p>
+                                </div>
+                                <div>
+                                    <label for="senator_student_id" class="block text-sm font-medium text-gray-700 mb-1">Assign Student</label>
+                                    <select name="student_id"
+                                            id="senator_student_id"
+                                            class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent @error('student_id') border-red-500 @enderror"
+                                            required>
+                                        <option value="">Select Student</option>
+                                        @foreach($availableStudents as $student)
+                                            <option value="{{ $student->id }}" {{ old('student_id') == $student->id ? 'selected' : '' }}>
+                                                {{ $student->first_name }} {{ $student->last_name }} ({{ $student->id_number }}) - {{ $student->department->abbreviation }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    @error('student_id')
+                                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                                    @enderror
+                                </div>
+                                <div class="flex justify-end">
+                                    <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                                        <i class="fas fa-plus mr-1"></i>Add Senator
+                                    </button>
+                                </div>
+                            </form>
+                            <p class="text-sm text-green-600 mt-2">Senator position has a fixed title and can be assigned to any student.</p>
+                        </div>
+
+                        <!-- Add Representative Section -->
+                        <div class="p-4 bg-green-50 border border-green-200 rounded-lg">
+                            <h4 class="text-lg font-semibold text-gray-900 mb-4">Add Representative Position</h4>
+                            <form action="{{ route('adviser.councils.add_congressman', $council) }}" method="POST" class="space-y-3">
+                                @csrf
+                                <div>
+                                    <label for="congressman_title" class="block text-sm font-medium text-gray-700 mb-1">Position Title</label>
+                                    <input type="text"
+                                           name="position_title"
+                                           id="congressman_title"
+                                           class="w-full border border-gray-300 rounded-lg px-3 py-2 bg-gray-100 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent @error('position_title') border-red-500 @enderror"
+                                           placeholder="Select a student to auto-populate"
+                                           value="{{ old('position_title') }}"
+                                           readonly
+                                           required>
+                                    @error('position_title')
+                                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                                    @enderror
+                                    <p class="text-xs text-gray-500 mt-1">Position title will be set automatically based on student's department</p>
+                                </div>
+                                <div>
+                                    <label for="congressman_student_id" class="block text-sm font-medium text-gray-700 mb-1">Assign Student</label>
+                                    <select name="student_id"
+                                            id="congressman_student_id"
+                                            class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent @error('student_id') border-red-500 @enderror"
+                                            onchange="updateRepresentativeTitle()"
+                                            required>
+                                        <option value="">Select Student</option>
+                                        @foreach($availableStudents as $student)
+                                            <option value="{{ $student->id }}" data-department="{{ $student->department->abbreviation }}" {{ old('student_id') == $student->id ? 'selected' : '' }}>
+                                                {{ $student->first_name }} {{ $student->last_name }} ({{ $student->id_number }}) - {{ $student->department->abbreviation }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    @error('student_id')
+                                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                                    @enderror
+                                </div>
+                                <div class="flex justify-end">
+                                    <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                                        <i class="fas fa-plus mr-1"></i>Add Representative
+                                    </button>
+                                </div>
+                            </form>
+                            <p class="text-sm text-green-600 mt-2">Position title automatically updates based on selected student's department (e.g., SITE Representative).</p>
+                        </div>
+
+                        <!-- Add Justice Section -->
+                        <div class="p-4 bg-green-50 border border-green-200 rounded-lg">
+                            <h4 class="text-lg font-semibold text-gray-900 mb-4">Add Associate Justice Position</h4>
+                            <form action="{{ route('adviser.councils.add_justice', $council) }}" method="POST" class="space-y-3">
+                                @csrf
+                                <div>
+                                    <label for="justice_title" class="block text-sm font-medium text-gray-700 mb-1">Position Title</label>
+                                    <input type="text"
+                                           name="position_title"
+                                           id="justice_title"
+                                           class="w-full border border-gray-300 rounded-lg px-3 py-2 bg-gray-100 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent @error('position_title') border-red-500 @enderror"
+                                           value="Associate Justice"
+                                           readonly
+                                           required>
+                                    @error('position_title')
+                                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                                    @enderror
+                                    <p class="text-xs text-gray-500 mt-1">Position title is fixed as "Associate Justice"</p>
+                                </div>
+                                <div>
+                                    <label for="justice_student_id" class="block text-sm font-medium text-gray-700 mb-1">Assign Student</label>
+                                    <select name="student_id"
+                                            id="justice_student_id"
+                                            class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent @error('student_id') border-red-500 @enderror"
+                                            required>
+                                        <option value="">Select Student</option>
+                                        @foreach($availableStudents as $student)
+                                            <option value="{{ $student->id }}" {{ old('student_id') == $student->id ? 'selected' : '' }}>
+                                                {{ $student->first_name }} {{ $student->last_name }} ({{ $student->id_number }}) - {{ $student->department->abbreviation }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    @error('student_id')
+                                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                                    @enderror
+                                </div>
+                                <div class="flex justify-end">
+                                    <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                                        <i class="fas fa-plus mr-1"></i>Add Associate Justice
+                                    </button>
+                                </div>
+                            </form>
+                            <p class="text-sm text-green-600 mt-2">Associate Justice position has a fixed title and can be assigned to any student.</p>
+                        </div>
+
+                        <!-- Add Coordinator Section -->
+                        <div class="p-4 bg-green-50 border border-green-200 rounded-lg">
+                            <h4 class="text-lg font-semibold text-gray-900 mb-4">Add Coordinator Position</h4>
+                            <form action="{{ route('adviser.councils.add_coordinator', $council) }}" method="POST" class="space-y-3">
+                                @csrf
+                                <div>
+                                    <label for="coordinator_title" class="block text-sm font-medium text-gray-700 mb-1">Coordinator Type</label>
+                                    <input type="text"
+                                           name="coordinator_title"
+                                           id="coordinator_title"
+                                           class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent @error('coordinator_title') border-red-500 @enderror"
+                                           placeholder="e.g., Academic, Sports, Logistics"
+                                           value="{{ old('coordinator_title') }}"
+                                           required>
+                                    @error('coordinator_title')
+                                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                                    @enderror
+                                    <p class="text-xs text-gray-500 mt-1">"Coordinator" will be automatically added to the title</p>
+                                </div>
+                                <div>
+                                    <label for="coordinator_student_id" class="block text-sm font-medium text-gray-700 mb-1">Assign Student</label>
+                                    <select name="student_id"
+                                            id="coordinator_student_id"
+                                            class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent @error('student_id') border-red-500 @enderror"
+                                            required>
+                                        <option value="">Select Student</option>
+                                        @foreach($availableStudents as $student)
+                                            <option value="{{ $student->id }}" {{ old('student_id') == $student->id ? 'selected' : '' }}>
+                                                {{ $student->first_name }} {{ $student->last_name }} ({{ $student->id_number }})
+                                                @if($council->department->abbreviation === 'UNIWIDE')
+                                                    - {{ $student->department->abbreviation }}
+                                                @endif
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    @error('student_id')
+                                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                                    @enderror
+                                </div>
+                                <div class="flex justify-end">
+                                    <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                                        <i class="fas fa-plus mr-1"></i>Add Coordinator
+                                    </button>
+                                </div>
+                            </form>
+                            <p class="text-sm text-green-600 mt-2">Enter the coordinator type (e.g., "Logistics") and "Coordinator" will be automatically added to create the full title.</p>
+                        </div>
+                    </div>
+                @else
+                    <!-- Add Coordinator Section for Non-UNIWIDE Councils -->
+                    <div class="mt-8 p-4 bg-green-50 border border-green-200 rounded-lg">
+                        <h4 class="text-lg font-semibold text-gray-900 mb-4">Add Coordinator Position</h4>
+                        <form action="{{ route('adviser.councils.add_coordinator', $council) }}" method="POST" class="space-y-3">
+                            @csrf
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <div>
+                                    <label for="coordinator_title" class="block text-sm font-medium text-gray-700 mb-1">Coordinator Type</label>
+                                    <input type="text"
+                                           name="coordinator_title"
+                                           id="coordinator_title"
+                                           class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent @error('coordinator_title') border-red-500 @enderror"
+                                           placeholder="e.g., Academic, Sports, Logistics"
+                                           value="{{ old('coordinator_title') }}"
+                                           required>
+                                    @error('coordinator_title')
+                                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                                    @enderror
+                                    <p class="text-xs text-gray-500 mt-1">"Coordinator" will be automatically added to the title</p>
+                                </div>
+                                <div>
+                                    <label for="coordinator_student_id" class="block text-sm font-medium text-gray-700 mb-1">Assign Student</label>
+                                    <select name="student_id"
+                                            id="coordinator_student_id"
+                                            class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent @error('student_id') border-red-500 @enderror"
+                                            required>
+                                        <option value="">Select Student</option>
+                                        @foreach($availableStudents as $student)
+                                            <option value="{{ $student->id }}" {{ old('student_id') == $student->id ? 'selected' : '' }}>
+                                                {{ $student->first_name }} {{ $student->last_name }} ({{ $student->id_number }})
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    @error('student_id')
+                                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                                    @enderror
+                                </div>
                             </div>
-                            <div>
-                                <label for="coordinator_student_id" class="block text-sm font-medium text-gray-700 mb-1">Assign Student</label>
-                                <select name="student_id"
-                                        id="coordinator_student_id"
-                                        class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('student_id') border-red-500 @enderror"
-                                        required>
-                                    <option value="">Select Student</option>
-                                    @foreach($availableStudents as $student)
-                                        <option value="{{ $student->id }}" {{ old('student_id') == $student->id ? 'selected' : '' }}>
-                                            {{ $student->first_name }} {{ $student->last_name }} ({{ $student->id_number }})
-                                            @if($council->department->abbreviation === 'UNIWIDE')
-                                                - {{ $student->department->abbreviation }}
-                                            @endif
-                                        </option>
-                                    @endforeach
-                                </select>
-                                @error('student_id')
-                                    <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                                @enderror
+                            <div class="flex justify-end">
+                                <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                                    <i class="fas fa-plus mr-1"></i>Add Coordinator
+                                </button>
                             </div>
-                        </div>
-                        <div class="flex justify-end">
-                            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                                <i class="fas fa-plus mr-1"></i>Add Coordinator
-                            </button>
-                        </div>
-                    </form>
-                    <p class="text-sm text-blue-600 mt-2">Create custom coordinator positions and assign them to students immediately.</p>
-                    @if($council->department->abbreviation === 'UNIWIDE')
-                        <div class="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                            <h5 class="text-sm font-medium text-yellow-800 mb-1">Uniwide Council Constraints:</h5>
-                            <ul class="text-xs text-yellow-700 space-y-1">
-                                <li>• Senators: 3 students per department (12 total)</li>
-                                <li>• Congressman & Justices: 2 students per department</li>
-                                <li>• Executive positions: No department restrictions</li>
-                                <li>• Students cannot be in multiple councils in the same academic year</li>
-                            </ul>
-                        </div>
-                    @endif
-                </div>
+                        </form>
+                        <p class="text-sm text-green-600 mt-2">Enter the coordinator type (e.g., "Logistics") and "Coordinator" will be automatically added to create the full title.</p>
+                    </div>
+                    <!-- Updated Information Note -->
+                    <div class="mt-8 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                        <h5 class="text-sm font-medium text-blue-800 mb-1">Uniwide Council Information:</h5>
+                        <ul class="text-xs text-blue-700 space-y-1">
+                            <li>• <strong>Position Order:</strong> Executive → Senate → Representatives → Justices → Coordinators</li>
+                            <li>• <strong>Senators:</strong> Fixed position name "Senator"</li>
+                            <li>• <strong>Representatives:</strong> Department-specific (e.g., "SITE Representative")</li>
+                            <li>• <strong>Associate Justices:</strong> Fixed position name "Associate Justice"</li>
+                            <li>• <strong>Coordinators:</strong> Custom prefix + "Coordinator" (e.g., "Logistics Coordinator")</li>
+                            <li>• Students cannot be in multiple councils in the same academic year</li>
+                        </ul>
+                    </div>
+                @endif
             @else
                 <div class="text-center py-8">
                     <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -312,8 +647,8 @@
         </div>
     </div>
 
-    <!-- Evaluations Tab Content -->
-    <div id="evaluations-content" class="tab-content hidden">
+    <!-- Evaluations Section Content -->
+    <div id="evaluations-section" class="section-content hidden">
         <div class="p-6">
             @if($council->councilOfficers->count() > 0)
                 <!-- Start Evaluations Button -->
@@ -324,18 +659,53 @@
                             <h4 class="text-lg font-medium text-blue-900">Ready to Start Evaluations</h4>
                             <p class="text-sm text-blue-700 mt-1">
                                 This will create evaluation instances for all {{ $council->councilOfficers->count() }} officers.
-                                Each officer will receive self-evaluation, peer evaluations from executives, and adviser evaluation.
+                                Each officer will receive self-evaluation, peer evaluations from assigned peer evaluators, and adviser evaluation.
                             </p>
+                            @php
+                                $peerEvaluators = $council->getPeerEvaluators();
+                                $level1PE = $peerEvaluators->where('peer_evaluator_level', 1)->first();
+                                $level2PE = $peerEvaluators->where('peer_evaluator_level', 2)->first();
+                            @endphp
+                            <div class="mt-2 text-sm text-blue-600">
+                                <strong>Assigned Peer Evaluators:</strong><br>
+                                Level 1: {{ $level1PE ? $level1PE->student->first_name . ' ' . $level1PE->student->last_name : 'Not assigned' }}<br>
+                                Level 2: {{ $level2PE ? $level2PE->student->first_name . ' ' . $level2PE->student->last_name : 'Not assigned' }}
+                            </div>
                         </div>
-                        <form action="{{ route('adviser.councils.start_evaluations', $council) }}" method="POST" class="ml-4">
+                        <form id="start-evaluation-form-details" action="{{ route('adviser.councils.start_evaluations', $council) }}" method="POST" class="ml-4">
                             @csrf
-                            <button type="submit"
-                                    onclick="return confirm('Are you sure you want to start evaluations? This will create evaluation instances for all officers.')"
+                            <button type="button"
+                                    onclick="confirmStartEvaluationDetails('{{ $council->name }}', {{ $council->councilOfficers->count() }})"
                                     class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
                                 <i class="fas fa-play mr-2"></i>
                                 Start Evaluations
                             </button>
                         </form>
+                    </div>
+                </div>
+                @elseif($council->councilOfficers->count() > 0 && !$council->hasPeerEvaluatorsAssigned())
+                <div class="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-exclamation-triangle text-yellow-600 text-xl"></i>
+                        </div>
+                        <div class="ml-3">
+                            <h4 class="text-lg font-medium text-yellow-900">Peer Evaluators Required</h4>
+                            <p class="text-sm text-yellow-700 mt-1">
+                                Before starting evaluations, you must assign exactly 2 officers as peer evaluators:
+                                one as Level 1 and one as Level 2. Use the "PE Level 1" and "PE Level 2" buttons in the Officers section above.
+                            </p>
+                            @php
+                                $peerEvaluators = $council->getPeerEvaluators();
+                                $level1PE = $peerEvaluators->where('peer_evaluator_level', 1)->first();
+                                $level2PE = $peerEvaluators->where('peer_evaluator_level', 2)->first();
+                            @endphp
+                            <div class="mt-2 text-sm text-yellow-600">
+                                <strong>Current Status:</strong><br>
+                                Level 1: {{ $level1PE ? $level1PE->student->first_name . ' ' . $level1PE->student->last_name . ' ✓' : 'Not assigned ✗' }}<br>
+                                Level 2: {{ $level2PE ? $level2PE->student->first_name . ' ' . $level2PE->student->last_name . ' ✓' : 'Not assigned ✗' }}
+                            </div>
+                        </div>
                     </div>
                 </div>
                 @elseif($council->hasEvaluations())
@@ -595,26 +965,27 @@
 </style>
 
 <script>
-// Tab functionality
-function showTab(tabName) {
-    // Hide all tab contents
-    document.querySelectorAll('.tab-content').forEach(content => {
-        content.classList.add('hidden');
+// Toggle section functionality
+function showSection(sectionName) {
+    // Hide all sections
+    document.querySelectorAll('.section-content').forEach(section => {
+        section.classList.add('hidden');
     });
 
-    // Remove active class from all tab buttons
-    document.querySelectorAll('.tab-button').forEach(button => {
-        button.classList.remove('active');
+    // Reset all toggle buttons to inactive state
+    document.querySelectorAll('.toggle-btn').forEach(btn => {
+        btn.classList.remove('bg-white', 'text-green-600', 'shadow-sm');
+        btn.classList.add('text-gray-600', 'hover:text-gray-800');
     });
 
-    // Show selected tab content
-    document.getElementById(tabName + '-content').classList.remove('hidden');
+    // Show selected section
+    document.getElementById(sectionName + '-section').classList.remove('hidden');
 
-    // Add active class to selected tab button
-    document.getElementById(tabName + '-tab').classList.add('active');
+    // Activate selected toggle button
+    const activeBtn = document.getElementById(sectionName + '-toggle');
+    activeBtn.classList.remove('text-gray-600', 'hover:text-gray-800');
+    activeBtn.classList.add('bg-white', 'text-green-600', 'shadow-sm');
 }
-
-// No longer needed - positions are pre-populated
 
 // Edit officer functionality
 function editOfficer(officerId, positionTitle, positionLevel) {
@@ -652,9 +1023,70 @@ document.getElementById('removeOfficerModal').addEventListener('click', function
     }
 });
 
+// Function to update representative title based on selected student's department
+function updateRepresentativeTitle() {
+    const studentSelect = document.getElementById('congressman_student_id');
+    const titleInput = document.getElementById('congressman_title');
+
+    if (studentSelect.value) {
+        const selectedOption = studentSelect.options[studentSelect.selectedIndex];
+        const department = selectedOption.getAttribute('data-department');
+
+        if (department && department !== 'UNIWIDE') {
+            titleInput.value = department + ' Representative';
+        } else {
+            titleInput.value = 'Representative';
+        }
+    } else {
+        titleInput.value = '';
+    }
+}
+
+// Confirm start evaluation for details page
+function confirmStartEvaluationDetails(councilName, officerCount) {
+    showConfirmation(
+        'Start Evaluations',
+        `This will create evaluation instances for all ${officerCount} officers in ${councilName}. Each officer will receive self-evaluation, peer evaluations from executives, and adviser evaluation.`,
+        () => {
+            document.getElementById('start-evaluation-form-details').submit();
+        },
+        'question'
+    );
+}
+
+// Dropdown toggle functionality
+function toggleDropdown(dropdownId) {
+    const dropdown = document.getElementById(dropdownId);
+    const isHidden = dropdown.classList.contains('hidden');
+
+    // Close all other dropdowns first
+    document.querySelectorAll('[id^="peer-dropdown-"]').forEach(dd => {
+        if (dd.id !== dropdownId) {
+            dd.classList.add('hidden');
+        }
+    });
+
+    // Toggle the clicked dropdown
+    if (isHidden) {
+        dropdown.classList.remove('hidden');
+    } else {
+        dropdown.classList.add('hidden');
+    }
+}
+
+// Close dropdowns when clicking outside
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.relative')) {
+        document.querySelectorAll('[id^="peer-dropdown-"]').forEach(dropdown => {
+            dropdown.classList.add('hidden');
+        });
+    }
+});
+
 // Initialize the page
 document.addEventListener('DOMContentLoaded', function() {
-    showTab('officers'); // Show officers tab by default
+    // Show officers section by default
+    showSection('officers');
 });
 </script>
 @endsection

@@ -17,6 +17,8 @@ return new class extends Migration
             $table->foreignId('student_id')->constrained();
             $table->string('position_title');
             $table->string('position_level');
+            $table->boolean('is_peer_evaluator')->default(false);
+            $table->integer('peer_evaluator_level')->nullable(); // 1 or 2
             $table->decimal('self_score', 5, 2)->nullable();
             $table->decimal('peer_score', 5, 2)->nullable();
             $table->decimal('adviser_score', 5, 2)->nullable();

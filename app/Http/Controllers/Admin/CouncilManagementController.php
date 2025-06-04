@@ -78,7 +78,25 @@ class CouncilManagementController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'academic_year' => 'required|string|max:255',
+            'academic_year' => [
+                'required',
+                'string',
+                'regex:/^\d{4}-\d{4}$/',
+                function ($attribute, $value, $fail) {
+                    $years = explode('-', $value);
+                    if (count($years) !== 2) {
+                        $fail('The academic year must be in YYYY-YYYY format.');
+                        return;
+                    }
+
+                    $startYear = (int) $years[0];
+                    $endYear = (int) $years[1];
+
+                    if ($endYear !== $startYear + 1) {
+                        $fail('The academic year must be consecutive years (e.g., 2024-2025).');
+                    }
+                }
+            ],
             'status' => 'required|in:active,completed',
             'adviser_id' => 'required|exists:advisers,id',
             'department_id' => 'required|exists:departments,id',
@@ -88,6 +106,17 @@ class CouncilManagementController extends Controller
         $adviser = Adviser::find($validated['adviser_id']);
         if ($adviser->department_id != $validated['department_id']) {
             return back()->withErrors(['adviser_id' => 'The selected adviser must belong to the selected department.'])->withInput();
+        }
+
+        // Check if department already has a council for this academic year
+        $existingCouncil = Council::where('department_id', $validated['department_id'])
+            ->where('academic_year', $validated['academic_year'])
+            ->first();
+
+        if ($existingCouncil) {
+            return back()->withErrors([
+                'academic_year' => 'This department already has a council for the selected academic year.'
+            ])->withInput();
         }
 
         // Ensure the name follows the correct format
@@ -119,7 +148,25 @@ class CouncilManagementController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'academic_year' => 'required|string|max:255',
+            'academic_year' => [
+                'required',
+                'string',
+                'regex:/^\d{4}-\d{4}$/',
+                function ($attribute, $value, $fail) {
+                    $years = explode('-', $value);
+                    if (count($years) !== 2) {
+                        $fail('The academic year must be in YYYY-YYYY format.');
+                        return;
+                    }
+
+                    $startYear = (int) $years[0];
+                    $endYear = (int) $years[1];
+
+                    if ($endYear !== $startYear + 1) {
+                        $fail('The academic year must be consecutive years (e.g., 2024-2025).');
+                    }
+                }
+            ],
             'status' => 'required|in:active,completed',
             'adviser_id' => 'required|exists:advisers,id',
             'department_id' => 'required|exists:departments,id',
@@ -129,6 +176,18 @@ class CouncilManagementController extends Controller
         $adviser = Adviser::find($validated['adviser_id']);
         if ($adviser->department_id != $validated['department_id']) {
             return back()->withErrors(['adviser_id' => 'The selected adviser must belong to the selected department.'])->withInput();
+        }
+
+        // Check if another council exists for this department and academic year (excluding current council)
+        $existingCouncil = Council::where('department_id', $validated['department_id'])
+            ->where('academic_year', $validated['academic_year'])
+            ->where('id', '!=', $council->id)
+            ->first();
+
+        if ($existingCouncil) {
+            return back()->withErrors([
+                'academic_year' => 'This department already has another council for the selected academic year.'
+            ])->withInput();
         }
 
         // Ensure the name follows the correct format
@@ -152,7 +211,25 @@ class CouncilManagementController extends Controller
     public function updateAcademicYear(Request $request)
     {
         $validated = $request->validate([
-            'academic_year' => 'required|string|max:255',
+            'academic_year' => [
+                'required',
+                'string',
+                'regex:/^\d{4}-\d{4}$/',
+                function ($attribute, $value, $fail) {
+                    $years = explode('-', $value);
+                    if (count($years) !== 2) {
+                        $fail('The academic year must be in YYYY-YYYY format.');
+                        return;
+                    }
+
+                    $startYear = (int) $years[0];
+                    $endYear = (int) $years[1];
+
+                    if ($endYear !== $startYear + 1) {
+                        $fail('The academic year must be consecutive years (e.g., 2024-2025).');
+                    }
+                }
+            ],
         ]);
 
         // Update all active councils to the new academic year

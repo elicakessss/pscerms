@@ -59,49 +59,38 @@ class EvaluationService
     }
 
     /**
-     * Create peer evaluation instances based on position levels
-     * Level 1 (President/Governor): Evaluates all members
-     * Level 2 (Vice President/Vice Governor): Evaluates only Level 1
+     * Create peer evaluation instances based on assigned peer evaluators
+     * Level 1 peer evaluator: Evaluates all members
+     * Level 2 peer evaluator: Evaluates all members
      */
     private function createPeerEvaluations(Council $council, $officers)
     {
-        // Get officers by position level
-        $level1Officers = $officers->filter(function ($officer) {
-            return $this->getPositionLevel($officer->position_title) === 1;
+        // Get assigned peer evaluators
+        $peerEvaluators = $officers->filter(function ($officer) {
+            return $officer->is_peer_evaluator;
         });
 
-        $level2Officers = $officers->filter(function ($officer) {
-            return $this->getPositionLevel($officer->position_title) === 2;
-        });
+        // Check if we have the required peer evaluators
+        $level1PeerEvaluator = $peerEvaluators->where('peer_evaluator_level', 1)->first();
+        $level2PeerEvaluator = $peerEvaluators->where('peer_evaluator_level', 2)->first();
 
-        // Level 1 officers (President/Governor) evaluate ALL members
-        foreach ($level1Officers as $level1Officer) {
+        if (!$level1PeerEvaluator || !$level2PeerEvaluator) {
+            throw new \Exception('Both Level 1 and Level 2 peer evaluators must be assigned before starting evaluations.');
+        }
+
+        // Both peer evaluators evaluate ALL members (except themselves)
+        foreach ([$level1PeerEvaluator, $level2PeerEvaluator] as $peerEvaluator) {
             foreach ($officers as $officer) {
                 // Skip self-evaluation (that's handled separately)
-                if ($level1Officer->student_id === $officer->student_id) {
+                if ($peerEvaluator->student_id === $officer->student_id) {
                     continue;
                 }
 
                 Evaluation::firstOrCreate([
                     'council_id' => $council->id,
-                    'evaluator_id' => $level1Officer->student_id,
+                    'evaluator_id' => $peerEvaluator->student_id,
                     'evaluator_type' => 'peer',
                     'evaluated_student_id' => $officer->student_id,
-                ], [
-                    'evaluation_type' => 'rating',
-                    'status' => 'pending',
-                ]);
-            }
-        }
-
-        // Level 2 officers (Vice President/Vice Governor) evaluate ONLY Level 1 officers
-        foreach ($level2Officers as $level2Officer) {
-            foreach ($level1Officers as $level1Officer) {
-                Evaluation::firstOrCreate([
-                    'council_id' => $council->id,
-                    'evaluator_id' => $level2Officer->student_id,
-                    'evaluator_type' => 'peer',
-                    'evaluated_student_id' => $level1Officer->student_id,
                 ], [
                     'evaluation_type' => 'rating',
                     'status' => 'pending',
@@ -295,21 +284,17 @@ class EvaluationService
             }
         }
 
-        // Add peer evaluations based on position levels
-        $level1Officers = $officers->filter(function ($officer) {
-            return $this->getPositionLevel($officer->position_title) === 1;
+        // Add peer evaluations based on assigned peer evaluators
+        $peerEvaluators = $officers->filter(function ($officer) {
+            return $officer->is_peer_evaluator;
         });
 
-        $level2Officers = $officers->filter(function ($officer) {
-            return $this->getPositionLevel($officer->position_title) === 2;
-        });
-
-        // Level 1 officers evaluate all members
-        foreach ($level1Officers as $level1Officer) {
+        // Both peer evaluators evaluate all members (except themselves)
+        foreach ($peerEvaluators as $peerEvaluator) {
             foreach ($officers as $officer) {
-                if ($level1Officer->student_id !== $officer->student_id) {
+                if ($peerEvaluator->student_id !== $officer->student_id) {
                     $peerEval = $council->evaluations()
-                        ->where('evaluator_id', $level1Officer->student_id)
+                        ->where('evaluator_id', $peerEvaluator->student_id)
                         ->where('evaluator_type', 'peer')
                         ->where('evaluated_student_id', $officer->student_id)
                         ->first();
@@ -318,34 +303,13 @@ class EvaluationService
                     if ($peerEval && $peerEval->status === 'completed') {
                         $evaluationsCompleted++;
                     } else {
+                        $levelText = $peerEvaluator->peer_evaluator_level === 1 ? 'Level 1' : 'Level 2';
                         $missingEvaluations[] = [
                             'type' => 'peer',
-                            'evaluator' => $level1Officer->student->first_name . ' ' . $level1Officer->student->last_name,
+                            'evaluator' => $peerEvaluator->student->first_name . ' ' . $peerEvaluator->student->last_name . " ({$levelText})",
                             'evaluated' => $officer->student->first_name . ' ' . $officer->student->last_name
                         ];
                     }
-                }
-            }
-        }
-
-        // Level 2 officers evaluate only Level 1 officers
-        foreach ($level2Officers as $level2Officer) {
-            foreach ($level1Officers as $level1Officer) {
-                $peerEval = $council->evaluations()
-                    ->where('evaluator_id', $level2Officer->student_id)
-                    ->where('evaluator_type', 'peer')
-                    ->where('evaluated_student_id', $level1Officer->student_id)
-                    ->first();
-
-                $evaluationsTotal++;
-                if ($peerEval && $peerEval->status === 'completed') {
-                    $evaluationsCompleted++;
-                } else {
-                    $missingEvaluations[] = [
-                        'type' => 'peer',
-                        'evaluator' => $level2Officer->student->first_name . ' ' . $level2Officer->student->last_name,
-                        'evaluated' => $level1Officer->student->first_name . ' ' . $level1Officer->student->last_name
-                    ];
                 }
             }
         }

@@ -93,17 +93,17 @@
             <div class="mb-6">
                 <div>
                     <label for="password" class="block text-sm font-medium text-gray-700 mb-2">
-                        New PIN (6 digits)
+                        New Password (6 digits)
                         <span class="text-gray-500 font-normal">(leave blank to keep current)</span>
                     </label>
-                    <input type="text"
+                    <input type="password"
                            id="password"
                            name="password"
                            maxlength="6"
                            pattern="[0-9]{6}"
-                           placeholder="123456"
+                           placeholder="Enter 6-digit password"
                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500">
-                    <p class="mt-1 text-xs text-gray-500">Enter a 6-digit PIN</p>
+                    <p class="mt-1 text-xs text-gray-500">Enter a 6-digit password</p>
                     @error('password')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                     @enderror

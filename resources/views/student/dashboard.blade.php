@@ -69,44 +69,7 @@
             </div>
         </div>
 
-        <!-- Account Shortcut Card -->
-        <div class="bg-white rounded-lg shadow-sm border border-gray-200">
-            <div class="p-6">
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-lg font-semibold text-gray-800">Account Shortcut</h3>
-                    <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
-                        <i class="fas fa-user-circle text-purple-600 text-lg"></i>
-                    </div>
-                </div>
 
-                <div class="space-y-3 mb-4">
-                    <div>
-                        <p class="text-sm font-medium text-gray-800">{{ $student->first_name }} {{ $student->last_name }}</p>
-                        <p class="text-xs text-gray-600">{{ $student->email }}</p>
-                    </div>
-                    <div class="flex justify-between items-center">
-                        <span class="text-sm text-gray-600">Department:</span>
-                        <span class="text-sm font-medium text-purple-600">{{ $student->department->name ?? 'Not assigned' }}</span>
-                    </div>
-                    <div class="flex justify-between items-center">
-                        <span class="text-sm text-gray-600">ID Number:</span>
-                        <span class="text-sm font-medium text-gray-800">{{ $student->id_number }}</span>
-                    </div>
-                    @if($completedCouncilsCount > 0)
-                        <div class="flex justify-between items-center">
-                            <span class="text-sm text-gray-600">Leadership Experiences:</span>
-                            <span class="text-sm font-medium text-yellow-600">{{ $completedCouncilsCount }}</span>
-                        </div>
-                    @endif
-                </div>
-
-                <a href="{{ route('student.account.index') }}"
-                   class="w-full bg-purple-600 hover:bg-purple-700 text-white text-center py-2 px-4 rounded-lg text-sm font-medium transition-colors inline-block">
-                    <i class="fas fa-cog mr-2"></i>
-                    Manage Account
-                </a>
-            </div>
-        </div>
     </div>
 
     <!-- Right Column - Evaluation Section -->
@@ -115,8 +78,8 @@
             <div class="p-6">
                 <div class="flex items-center justify-between mb-6">
                     <h3 class="text-lg font-semibold text-gray-800">Evaluation Section</h3>
-                    <div class="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
-                        <i class="fas fa-clipboard-list text-yellow-600 text-lg"></i>
+                    <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-clipboard-list text-green-600 text-lg"></i>
                     </div>
                 </div>
 
@@ -144,7 +107,7 @@
                                                 </div>
                                                 <div class="ml-4">
                                                     <a href="{{ route('student.evaluation.self', $evaluation->council) }}"
-                                                       class="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 transition-colors">
+                                                       class="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 transition-colors">
                                                         <i class="fas fa-edit mr-1"></i>
                                                         Start Self Evaluation
                                                     </a>

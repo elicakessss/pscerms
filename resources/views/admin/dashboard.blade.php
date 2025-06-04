@@ -23,8 +23,8 @@
             <div class="p-6">
                 <div class="flex items-center justify-between mb-4">
                     <h3 class="text-lg font-semibold text-gray-800">Council Management</h3>
-                    <div class="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center">
-                        <i class="fas fa-users-cog text-indigo-600 text-lg"></i>
+                    <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-users-cog text-green-600 text-lg"></i>
                     </div>
                 </div>
 
@@ -44,7 +44,7 @@
                 </div>
 
                 <a href="{{ route('admin.council_management.index') }}"
-                   class="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-center py-2 px-4 rounded-lg text-sm font-medium transition-colors inline-block">
+                   class="w-full bg-green-600 hover:bg-green-700 text-white text-center py-2 px-4 rounded-lg text-sm font-medium transition-colors inline-block">
                     <i class="fas fa-cog mr-2"></i>
                     Manage Councils
                 </a>
@@ -56,8 +56,8 @@
             <div class="p-6">
                 <div class="flex items-center justify-between mb-4">
                     <h3 class="text-lg font-semibold text-gray-800">User Management</h3>
-                    <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                        <i class="fas fa-users text-blue-600 text-lg"></i>
+                    <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-users text-green-600 text-lg"></i>
                     </div>
                 </div>
 
@@ -72,16 +72,16 @@
                     </div>
                     <div class="flex justify-between items-center">
                         <span class="text-sm text-gray-600">Advisers:</span>
-                        <span class="text-sm font-medium text-purple-600">{{ $userCounts['advisers'] }}</span>
+                        <span class="text-sm font-medium text-green-700">{{ $userCounts['advisers'] }}</span>
                     </div>
                     <div class="flex justify-between items-center">
                         <span class="text-sm text-gray-600">Admins:</span>
-                        <span class="text-sm font-medium text-red-600">{{ $userCounts['admins'] }}</span>
+                        <span class="text-sm font-medium text-green-800">{{ $userCounts['admins'] }}</span>
                     </div>
                 </div>
 
                 <a href="{{ route('admin.user_management.index') }}"
-                   class="w-full bg-blue-600 hover:bg-blue-700 text-white text-center py-2 px-4 rounded-lg text-sm font-medium transition-colors inline-block">
+                   class="w-full bg-green-600 hover:bg-green-700 text-white text-center py-2 px-4 rounded-lg text-sm font-medium transition-colors inline-block">
                     <i class="fas fa-users mr-2"></i>
                     Manage Users
                 </a>
@@ -93,8 +93,8 @@
             <div class="p-6">
                 <div class="flex items-center justify-between mb-4">
                     <h3 class="text-lg font-semibold text-gray-800">System Logs</h3>
-                    <div class="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
-                        <i class="fas fa-file-alt text-gray-600 text-lg"></i>
+                    <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-file-alt text-green-600 text-lg"></i>
                     </div>
                 </div>
 
@@ -103,7 +103,7 @@
                     <p class="text-xs text-gray-500">View logs and system events</p>
                 </div>
 
-                <button class="w-full bg-gray-600 hover:bg-gray-700 text-white text-center py-2 px-4 rounded-lg text-sm font-medium transition-colors">
+                <button class="w-full bg-green-600 hover:bg-green-700 text-white text-center py-2 px-4 rounded-lg text-sm font-medium transition-colors">
                     <i class="fas fa-eye mr-2"></i>
                     View Logs
                 </button>
@@ -117,8 +117,8 @@
             <div class="p-6">
                 <div class="flex items-center justify-between mb-6">
                     <h3 class="text-lg font-semibold text-gray-800">Evaluation Progress</h3>
-                    <div class="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
-                        <i class="fas fa-chart-line text-yellow-600 text-lg"></i>
+                    <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-chart-line text-green-600 text-lg"></i>
                     </div>
                 </div>
 
@@ -127,7 +127,7 @@
                     <h4 class="text-md font-medium text-gray-800 mb-4">
                         Active Councils
                         @if($activeCouncils->count() > 0)
-                            <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full ml-2">
+                            <span class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full ml-2">
                                 {{ $activeCouncils->count() }}
                             </span>
                         @endif
@@ -179,16 +179,16 @@
                         </div>
                     @elseif($activeCouncils->count() > 0)
                         <div class="text-center py-8">
-                            <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                                <i class="fas fa-play-circle text-blue-600 text-2xl"></i>
+                            <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <i class="fas fa-play-circle text-green-600 text-2xl"></i>
                             </div>
                             <h5 class="text-lg font-medium text-gray-500 mb-2">Evaluations Not Started</h5>
                             <p class="text-gray-400">{{ $activeCouncils->count() }} active councils haven't started evaluations yet.</p>
                         </div>
                     @else
                         <div class="text-center py-8">
-                            <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                                <i class="fas fa-users-cog text-gray-400 text-2xl"></i>
+                            <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <i class="fas fa-users-cog text-green-400 text-2xl"></i>
                             </div>
                             <h5 class="text-lg font-medium text-gray-500 mb-2">No Active Councils</h5>
                             <p class="text-gray-400">Create councils to start tracking evaluation progress.</p>

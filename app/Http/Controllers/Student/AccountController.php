@@ -59,8 +59,8 @@ class AccountController extends Controller
     public function updatePassword(Request $request)
     {
         $validated = $request->validate([
-            'current_password' => 'required',
-            'password' => 'required|string|min:8|confirmed',
+            'current_password' => 'required|digits:6',
+            'password' => 'required|digits:6|confirmed',
         ]);
 
         $student = Auth::user();

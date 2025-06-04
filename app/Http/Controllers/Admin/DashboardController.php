@@ -36,7 +36,8 @@ class DashboardController extends Controller
 
         $evaluationProgress = [];
         foreach ($activeCouncils as $council) {
-            if ($council->hasEvaluations()) {
+            // Only include active councils with evaluations in progress
+            if ($council->status === 'active' && $council->hasEvaluations()) {
                 $progress = $evaluationService->getEvaluationProgress($council);
                 $evaluationProgress[] = [
                     'council' => $council,

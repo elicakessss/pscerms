@@ -40,10 +40,15 @@
                            value="{{ old('academic_year', date('Y') . '-' . (date('Y') + 1)) }}"
                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 @error('academic_year') border-red-500 @enderror"
                            placeholder="e.g., 2024-2025"
+                           pattern="\d{4}-\d{4}"
+                           title="Academic year must be in YYYY-YYYY format (e.g., 2024-2025)"
                            required>
                     @error('academic_year')
                         <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                     @enderror
+                    <p class="text-sm text-gray-500 mt-1">
+                        Format: YYYY-YYYY (e.g., 2024-2025). Must be consecutive years.
+                    </p>
                 </div>
 
                 <!-- Status -->
