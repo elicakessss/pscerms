@@ -32,7 +32,7 @@
         .text-xl { font-size: 16px; }
         .text-2xl { font-size: 18px; }
 
-        /* Custom button styles */
+        /* Button styles */
         .btn-primary {
             background: linear-gradient(180deg, #064e3b 0%, #065f46 50%, #047857 100%);
             color: white;

@@ -8,6 +8,15 @@
     <!-- Header Card -->
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
         <div class="p-6">
+            <!-- Back Button -->
+            <div class="mb-4">
+                <a href="{{ route('adviser.dashboard') }}"
+                   class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">
+                    <i class="fas fa-arrow-left mr-2"></i>
+                    Back to Dashboard
+                </a>
+            </div>
+
             <div class="flex items-center justify-between">
                 <div>
                     <h2 class="text-2xl font-semibold text-gray-800 mb-2">Leadership Certificate Request</h2>
@@ -15,17 +24,38 @@
                         Review and respond to the leadership certificate request from {{ $request->student->first_name }} {{ $request->student->last_name }}.
                     </p>
                 </div>
-                <div class="text-right">
-                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
-                        @if($request->status === 'pending') bg-yellow-100 text-yellow-800
-                        @elseif($request->status === 'approved') bg-green-100 text-green-800
-                        @else bg-red-100 text-red-800 @endif">
-                        {{ ucfirst($request->status) }}
-                    </span>
-                </div>
             </div>
         </div>
     </div>
+
+    <!-- Actions -->
+    @if($request->status === 'pending')
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
+            <div class="p-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">Actions</h3>
+
+                <div class="flex space-x-4">
+                    <!-- Approve Button -->
+                    <form action="{{ route('adviser.leadership_certificate.approve', $request) }}" method="POST" class="inline">
+                        @csrf
+                        <button type="submit"
+                                class="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+                                onclick="return confirm('Are you sure you want to approve this certificate request?')">
+                            <i class="fas fa-check mr-2"></i>
+                            Approve Request
+                        </button>
+                    </form>
+
+                    <!-- Dismiss Button -->
+                    <button onclick="showDismissModal()"
+                            class="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors">
+                        <i class="fas fa-times mr-2"></i>
+                        Dismiss Request
+                    </button>
+                </div>
+            </div>
+        </div>
+    @endif
 
     <!-- Request Details -->
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
@@ -186,43 +216,6 @@
         </div>
     </div>
 
-    <!-- Actions -->
-    @if($request->status === 'pending')
-        <div class="bg-white rounded-lg shadow-sm border border-gray-200">
-            <div class="p-6">
-                <h3 class="text-lg font-semibold text-gray-800 mb-4">Actions</h3>
-
-                <div class="flex space-x-4">
-                    <!-- Approve Button -->
-                    <form action="{{ route('adviser.leadership_certificate.approve', $request) }}" method="POST" class="inline">
-                        @csrf
-                        <button type="submit"
-                                class="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
-                                onclick="return confirm('Are you sure you want to approve this certificate request?')">
-                            <i class="fas fa-check mr-2"></i>
-                            Approve Request
-                        </button>
-                    </form>
-
-                    <!-- Dismiss Button -->
-                    <button onclick="showDismissModal()"
-                            class="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors">
-                        <i class="fas fa-times mr-2"></i>
-                        Dismiss Request
-                    </button>
-                </div>
-            </div>
-        </div>
-    @endif
-
-    <!-- Back Button -->
-    <div class="mt-6">
-        <a href="{{ route('adviser.dashboard') }}"
-           class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">
-            <i class="fas fa-arrow-left mr-2"></i>
-            Back to Dashboard
-        </a>
-    </div>
 </div>
 
 <!-- Dismiss Modal -->

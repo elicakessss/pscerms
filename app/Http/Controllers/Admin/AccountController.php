@@ -2,59 +2,35 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Http\Controllers\Controller;
+use App\Http\Controllers\BaseAccountController;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Storage;
 
-class AccountController extends Controller
+class AccountController extends BaseAccountController
 {
+    protected function getUserType(): string
+    {
+        return 'admin';
+    }
+
+    protected function getAccountIndexRoute(): string
+    {
+        return 'admin.account.index';
+    }
+
     public function index()
     {
-        $admin = Auth::user();
+        $admin = $this->getAuthenticatedUser();
         return view('admin.account.index', compact('admin'));
     }
 
     public function edit()
     {
-        $admin = Auth::user();
+        $admin = $this->getAuthenticatedUser();
         return view('admin.account.edit', compact('admin'));
     }
 
     public function update(Request $request)
     {
-        $admin = Auth::user();
-
-        $validated = $request->validate([
-            'first_name' => 'required|string|max:255',
-            'last_name' => 'required|string|max:255',
-            'email' => 'required|email|max:255|unique:admins,email,' . $admin->id,
-        ]);
-
-        $admin->update($validated);
-
-        return redirect()->route('admin.account.index')->with('success', 'Profile updated successfully!');
-    }
-
-    public function updatePassword(Request $request)
-    {
-        $validated = $request->validate([
-            'current_password' => 'required|digits:6',
-            'password' => 'required|digits:6|confirmed',
-        ]);
-
-        $admin = Auth::user();
-
-        // Check current password
-        if (!Hash::check($validated['current_password'], $admin->password)) {
-            return back()->withErrors(['current_password' => 'The current password is incorrect.']);
-        }
-
-        $admin->update([
-            'password' => Hash::make($validated['password']),
-        ]);
-
-        return redirect()->route('admin.account.index')->with('success', 'Password updated successfully!');
+        return $this->updateProfile($request);
     }
 }

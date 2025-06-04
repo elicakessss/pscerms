@@ -2,17 +2,31 @@
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
+
+// Authentication Controllers
+use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Auth\ForgotPasswordController;
+
+// Student Controllers
 use App\Http\Controllers\Student\AccountController as StudentAccountController;
 use App\Http\Controllers\Student\DashboardController as StudentDashboardController;
+use App\Http\Controllers\Student\CouncilController as StudentCouncilController;
+use App\Http\Controllers\Student\EvaluationController as StudentEvaluationController;
+
+// Adviser Controllers
 use App\Http\Controllers\Adviser\AccountController as AdviserAccountController;
 use App\Http\Controllers\Adviser\DashboardController as AdviserDashboardController;
 use App\Http\Controllers\Adviser\StudentManagementController as AdviserStudentManagementController;
-use App\Http\Controllers\Admin\UserManagementController as AdminUserManagementController;
-use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
-use App\Http\Controllers\Admin\CouncilManagementController as AdminCouncilManagementController;
+use App\Http\Controllers\Adviser\CouncilController as AdviserCouncilController;
+use App\Http\Controllers\Adviser\EvaluationController as AdviserEvaluationController;
+
+// Admin Controllers
 use App\Http\Controllers\Admin\AccountController as AdminAccountController;
-use App\Http\Controllers\Auth\LoginController;
-use App\Http\Controllers\Auth\ForgotPasswordController;
+use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Admin\UserManagementController as AdminUserManagementController;
+use App\Http\Controllers\Admin\CouncilManagementController as AdminCouncilManagementController;
+use App\Http\Controllers\Admin\DepartmentController as AdminDepartmentController;
+use App\Http\Controllers\Admin\EvaluationFormController as AdminEvaluationFormController;
 
 // Home page - redirect to login
 Route::get('/', function () {
@@ -45,13 +59,13 @@ Route::prefix('student')->name('student.')->group(function () {
         Route::put('/account/password', [StudentAccountController::class, 'updatePassword'])->name('account.update_password');
 
         // My Councils management
-        Route::get('/councils', [App\Http\Controllers\Student\CouncilController::class, 'index'])->name('councils.index');
-        Route::get('/councils/{council}', [App\Http\Controllers\Student\CouncilController::class, 'show'])->name('councils.show');
+        Route::get('/councils', [StudentCouncilController::class, 'index'])->name('councils.index');
+        Route::get('/councils/{council}', [StudentCouncilController::class, 'show'])->name('councils.show');
 
         // Evaluation management
-        Route::get('/evaluation/self/{council}', [App\Http\Controllers\Student\EvaluationController::class, 'showSelf'])->name('evaluation.self');
-        Route::get('/evaluation/peer/{council}/{evaluatedStudent}', [App\Http\Controllers\Student\EvaluationController::class, 'showPeer'])->name('evaluation.peer');
-        Route::post('/evaluation', [App\Http\Controllers\Student\EvaluationController::class, 'store'])->name('evaluation.store');
+        Route::get('/evaluation/self/{council}', [StudentEvaluationController::class, 'showSelf'])->name('evaluation.self');
+        Route::get('/evaluation/peer/{council}/{evaluatedStudent}', [StudentEvaluationController::class, 'showPeer'])->name('evaluation.peer');
+        Route::post('/evaluation', [StudentEvaluationController::class, 'store'])->name('evaluation.student_store');
 
         // Leadership Certificate management
         Route::get('/leadership-certificate/create', [StudentDashboardController::class, 'createCertificateRequest'])->name('leadership_certificate.create');
@@ -91,30 +105,31 @@ Route::prefix('adviser')->name('adviser.')->group(function () {
         Route::delete('/student_management/{student}', [AdviserStudentManagementController::class, 'destroy'])->name('student_management.destroy');
 
         // Council management
-        Route::get('/councils', [App\Http\Controllers\Adviser\CouncilController::class, 'index'])->name('councils.index');
-        Route::get('/councils/create', [App\Http\Controllers\Adviser\CouncilController::class, 'create'])->name('councils.create');
-        Route::post('/councils', [App\Http\Controllers\Adviser\CouncilController::class, 'store'])->name('councils.store');
-        Route::get('/councils/{council}', [App\Http\Controllers\Adviser\CouncilController::class, 'show'])->name('councils.show');
-        Route::delete('/councils/{council}', [App\Http\Controllers\Adviser\CouncilController::class, 'destroy'])->name('councils.destroy');
-        Route::post('/councils/{council}/officers', [App\Http\Controllers\Adviser\CouncilController::class, 'assignOfficer'])->name('councils.assign_officer');
-        Route::post('/councils/{council}/coordinators', [App\Http\Controllers\Adviser\CouncilController::class, 'addCoordinator'])->name('councils.add_coordinator');
-        Route::post('/councils/{council}/senators', [App\Http\Controllers\Adviser\CouncilController::class, 'addSenator'])->name('councils.add_senator');
-        Route::post('/councils/{council}/congressmen', [App\Http\Controllers\Adviser\CouncilController::class, 'addCongressman'])->name('councils.add_congressman');
-        Route::post('/councils/{council}/justices', [App\Http\Controllers\Adviser\CouncilController::class, 'addJustice'])->name('councils.add_justice');
-        Route::put('/councils/{council}/officers/{officer}', [App\Http\Controllers\Adviser\CouncilController::class, 'updateOfficer'])->name('councils.update_officer');
-        Route::delete('/councils/{council}/officers/{officer}', [App\Http\Controllers\Adviser\CouncilController::class, 'removeOfficer'])->name('councils.remove_officer');
+        Route::get('/councils', [AdviserCouncilController::class, 'index'])->name('councils.index');
+        Route::get('/councils/create', [AdviserCouncilController::class, 'create'])->name('councils.create');
+        Route::post('/councils', [AdviserCouncilController::class, 'store'])->name('councils.store');
+        Route::get('/councils/{council}', [AdviserCouncilController::class, 'show'])->name('councils.show');
+        Route::delete('/councils/{council}', [AdviserCouncilController::class, 'destroy'])->name('councils.destroy');
+        Route::get('/councils/{council}/search-students', [AdviserCouncilController::class, 'searchStudents'])->name('councils.search_students');
+        Route::post('/councils/{council}/officers', [AdviserCouncilController::class, 'assignOfficer'])->name('councils.assign_officer');
+        Route::post('/councils/{council}/coordinators', [AdviserCouncilController::class, 'addCoordinator'])->name('councils.add_coordinator');
+        Route::post('/councils/{council}/senators', [AdviserCouncilController::class, 'addSenator'])->name('councils.add_senator');
+        Route::post('/councils/{council}/congressmen', [AdviserCouncilController::class, 'addCongressman'])->name('councils.add_congressman');
+        Route::post('/councils/{council}/justices', [AdviserCouncilController::class, 'addJustice'])->name('councils.add_justice');
+        Route::put('/councils/{council}/officers/{officer}', [AdviserCouncilController::class, 'updateOfficer'])->name('councils.update_officer');
+        Route::delete('/councils/{council}/officers/{officer}', [AdviserCouncilController::class, 'removeOfficer'])->name('councils.remove_officer');
 
         // Peer evaluator assignment
-        Route::post('/councils/{council}/officers/{officer}/assign-peer-evaluator', [App\Http\Controllers\Adviser\CouncilController::class, 'assignPeerEvaluator'])->name('councils.assign_peer_evaluator');
-        Route::delete('/councils/{council}/officers/{officer}/remove-peer-evaluator', [App\Http\Controllers\Adviser\CouncilController::class, 'removePeerEvaluator'])->name('councils.remove_peer_evaluator');
+        Route::post('/councils/{council}/officers/{officer}/assign-peer-evaluator', [AdviserCouncilController::class, 'assignPeerEvaluator'])->name('councils.assign_peer_evaluator');
+        Route::delete('/councils/{council}/officers/{officer}/remove-peer-evaluator', [AdviserCouncilController::class, 'removePeerEvaluator'])->name('councils.remove_peer_evaluator');
 
         // Evaluation management
-        Route::get('/evaluation/{council}/{student}', [App\Http\Controllers\Adviser\EvaluationController::class, 'show'])->name('evaluation.show');
-        Route::post('/evaluation', [App\Http\Controllers\Adviser\EvaluationController::class, 'store'])->name('evaluation.store');
+        Route::get('/evaluation/{council}/{student}', [AdviserEvaluationController::class, 'show'])->name('evaluation.show');
+        Route::post('/evaluation', [AdviserEvaluationController::class, 'store'])->name('evaluation.adviser_store');
 
-        // Evaluation management
-        Route::post('/councils/{council}/start-evaluations', [App\Http\Controllers\Adviser\CouncilController::class, 'startEvaluations'])->name('councils.start_evaluations');
-        Route::delete('/councils/{council}/clear-evaluations', [App\Http\Controllers\Adviser\CouncilController::class, 'clearEvaluations'])->name('councils.clear_evaluations');
+        // Evaluation instance management
+        Route::post('/councils/{council}/start-evaluations', [AdviserCouncilController::class, 'startEvaluations'])->name('councils.start_evaluations');
+        Route::delete('/councils/{council}/clear-evaluations', [AdviserCouncilController::class, 'clearEvaluations'])->name('councils.clear_evaluations');
 
         // Leadership Certificate management
         Route::get('/leadership-certificate/{request}', [AdviserDashboardController::class, 'viewCertificateRequest'])->name('leadership_certificate.show');
@@ -154,7 +169,13 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::delete('/user_management/{type}/{id}', [AdminUserManagementController::class, 'destroy'])->name('user_management.destroy');
 
         // Department management
-        Route::resource('departments', App\Http\Controllers\Admin\DepartmentController::class);
+        Route::resource('departments', AdminDepartmentController::class);
+
+        // Evaluation Form management
+        Route::get('/evaluation_forms', [AdminEvaluationFormController::class, 'index'])->name('evaluation_forms.index');
+        Route::get('/evaluation_forms/edit', [AdminEvaluationFormController::class, 'edit'])->name('evaluation_forms.edit');
+        Route::put('/evaluation_forms', [AdminEvaluationFormController::class, 'update'])->name('evaluation_forms.update');
+        Route::get('/evaluation_forms/preview/{type?}', [AdminEvaluationFormController::class, 'preview'])->name('evaluation_forms.preview');
 
         // Council management
         Route::resource('council_management', AdminCouncilManagementController::class)->parameters([
@@ -171,3 +192,5 @@ Route::prefix('admin')->name('admin.')->group(function () {
         })->name('logout');
     });
 });
+
+

@@ -3,13 +3,13 @@
 namespace App\Http\Controllers\Adviser;
 
 use App\Http\Controllers\BaseAccountController;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\Request;
 
 class AccountController extends BaseAccountController
 {
-    protected function getAuthenticatedUser()
+    protected function getUserType(): string
     {
-        return Auth::user();
+        return 'adviser';
     }
 
     protected function getAccountIndexRoute(): string
@@ -17,39 +17,21 @@ class AccountController extends BaseAccountController
         return 'adviser.account.index';
     }
 
-    protected function getProfileValidationRules($user): array
+    public function index()
     {
-        return [
-            'first_name' => 'required|string|max:255',
-            'last_name' => 'required|string|max:255',
-            'email' => 'required|email|max:255|unique:advisers,email,' . $user->id,
-            'profile_picture' => 'nullable|image|max:2048',
-        ];
+        $adviser = $this->getAuthenticatedUser();
+        return view('adviser.account.index', compact('adviser'));
     }
 
-    protected function getProfilePicturePath(): string
+    public function edit()
     {
-        return 'profile_pictures/advisers';
+        $adviser = $this->getAuthenticatedUser();
+        return view('adviser.account.edit', compact('adviser'));
     }
 
-    protected function getEmailUniqueRule($user): string
+    public function update(Request $request)
     {
-        return 'unique:advisers,email,' . $user->id;
-    }
-
-    protected function getIndexView(): string
-    {
-        return 'adviser.account.index';
-    }
-
-    protected function getEditView(): string
-    {
-        return 'adviser.account.edit';
-    }
-
-    protected function getIndexViewData($user): array
-    {
-        return ['adviser' => $user];
+        return $this->updateProfile($request);
     }
 }
 

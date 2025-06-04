@@ -19,6 +19,8 @@
         .header-gradient {
             background: linear-gradient(180deg, #064e3b 0%, #065f46 50%, #047857 100%);
         }
+
+
         .sidebar-title {
             font-size: 16px;
             font-weight: 700;

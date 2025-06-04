@@ -42,7 +42,10 @@ class EvaluationController extends Controller
                 ->with('error', 'You have already completed your self-evaluation for this council.');
         }
 
-        return view('evaluation.self', compact('council', 'officer'));
+        // Get filtered questions for self evaluation
+        $questions = $this->getFilteredQuestions('self');
+
+        return view('evaluation.self', compact('council', 'officer', 'questions'));
     }
 
     /**
@@ -88,10 +91,14 @@ class EvaluationController extends Controller
                 ->with('error', 'You have already completed the peer evaluation for this student.');
         }
 
+        // Get filtered questions for peer evaluation
+        $questions = $this->getFilteredQuestions('peer');
+
         return view('evaluation.peer', [
             'council' => $council,
             'student' => $evaluatedStudent,
-            'officer' => $officer
+            'officer' => $officer,
+            'questions' => $questions
         ]);
     }
 
@@ -109,8 +116,8 @@ class EvaluationController extends Controller
             'evaluator_type' => 'required|in:self,peer',
         ];
 
-        // Get evaluation type specific rules
-        $evaluationRules = $this->getValidationRules($request->evaluator_type);
+        // Get evaluation type specific rules that match exactly what the form shows
+        $evaluationRules = $this->getValidationRulesForEvaluatorType($request->evaluator_type);
 
         $validated = $request->validate(array_merge($baseRules, $evaluationRules));
 
@@ -207,35 +214,60 @@ class EvaluationController extends Controller
     }
 
     /**
-     * Get validation rules based on evaluation type
+     * Get filtered questions for a specific evaluator type
+     * This ensures consistency between form display and validation
      */
-    private function getValidationRules($evaluatorType)
+    private function getFilteredQuestions($evaluatorType)
     {
-        if ($evaluatorType === 'self') {
-            return [
-                // Domain 2 - Strand 1 and Strand 3
-                'domain2_strand1_q1' => 'required|numeric|in:0.00,1.00,2.00,3.00',
-                'domain2_strand3_q1' => 'required|numeric|in:0.00,1.00,2.00,3.00',
-                'domain2_strand3_q2' => 'required|numeric|in:0.00,1.00,2.00,3.00',
-                // Domain 3 - All strands
-                'domain3_strand1_q1' => 'required|numeric|in:0.00,1.00,2.00,3.00',
-                'domain3_strand1_q2' => 'required|numeric|in:0.00,1.00,2.00,3.00',
-                'domain3_strand2_q1' => 'required|numeric|in:0.00,1.00,2.00,3.00',
-            ];
-        } else { // peer
-            return [
-                // Domain 2 - All strands
-                'domain2_strand1_q1' => 'required|numeric|in:0.00,1.00,2.00,3.00',
-                'domain2_strand2_q1' => 'required|numeric|in:0.00,1.00,2.00,3.00',
-                'domain2_strand2_q2' => 'required|numeric|in:0.00,1.00,2.00,3.00',
-                'domain2_strand3_q1' => 'required|numeric|in:0.00,1.00,2.00,3.00',
-                'domain2_strand3_q2' => 'required|numeric|in:0.00,1.00,2.00,3.00',
-                // Domain 3 - All strands
-                'domain3_strand1_q1' => 'required|numeric|in:0.00,1.00,2.00,3.00',
-                'domain3_strand1_q2' => 'required|numeric|in:0.00,1.00,2.00,3.00',
-                'domain3_strand2_q1' => 'required|numeric|in:0.00,1.00,2.00,3.00',
-            ];
+        $evaluationConfig = config('evaluation_questions.domains');
+        $questions = [];
+
+        foreach ($evaluationConfig as $domain) {
+            $filteredDomain = $domain;
+            $filteredDomain['strands'] = [];
+
+            foreach ($domain['strands'] as $strand) {
+                $filteredStrand = $strand;
+                $filteredStrand['questions'] = [];
+
+                foreach ($strand['questions'] as $question) {
+                    if (in_array($evaluatorType, $question['access_levels'])) {
+                        $filteredStrand['questions'][] = $question;
+                    }
+                }
+
+                if (!empty($filteredStrand['questions'])) {
+                    $filteredDomain['strands'][] = $filteredStrand;
+                }
+            }
+
+            if (!empty($filteredDomain['strands'])) {
+                $questions[] = $filteredDomain;
+            }
         }
+
+        return $questions;
+    }
+
+    /**
+     * Get validation rules based on filtered questions for evaluator type
+     * This ensures validation matches exactly what the form shows
+     */
+    private function getValidationRulesForEvaluatorType($evaluatorType)
+    {
+        $validationRules = [];
+        $filteredQuestions = $this->getFilteredQuestions($evaluatorType);
+
+        foreach ($filteredQuestions as $domainIndex => $domain) {
+            foreach ($domain['strands'] as $strandIndex => $strand) {
+                foreach ($strand['questions'] as $questionIndex => $question) {
+                    $fieldName = 'domain' . ($domainIndex + 1) . '_strand' . ($strandIndex + 1) . '_q' . ($questionIndex + 1);
+                    $validationRules[$fieldName] = 'required|numeric|in:0.00,1.00,2.00,3.00';
+                }
+            }
+        }
+
+        return $validationRules;
     }
 
     /**
@@ -243,30 +275,30 @@ class EvaluationController extends Controller
      */
     private function getEvaluationResponses($validated)
     {
-        if ($validated['evaluator_type'] === 'self') {
-            return [
-                // Domain 2 - Strand 1 and Strand 3
-                ['section_name' => 'Domain 2 - Strand 1', 'question' => 'Performs tasks outside assignment, solves issues, participates in aftercare', 'answer' => $validated['domain2_strand1_q1']],
-                ['section_name' => 'Domain 2 - Strand 3', 'question' => 'Attends regular meetings', 'answer' => $validated['domain2_strand3_q1']],
-                ['section_name' => 'Domain 2 - Strand 3', 'question' => 'Attends special/emergency meetings', 'answer' => $validated['domain2_strand3_q2']],
-                // Domain 3 - All strands
-                ['section_name' => 'Domain 3 - Strand 1', 'question' => 'Model of grooming and proper decorum', 'answer' => $validated['domain3_strand1_q1']],
-                ['section_name' => 'Domain 3 - Strand 1', 'question' => 'Submits reports regularly', 'answer' => $validated['domain3_strand1_q2']],
-                ['section_name' => 'Domain 3 - Strand 2', 'question' => 'Ensures cleanliness and orderliness', 'answer' => $validated['domain3_strand2_q1']],
-            ];
-        } else { // peer
-            return [
-                // Domain 2 - All strands
-                ['section_name' => 'Domain 2 - Strand 1', 'question' => 'Performs tasks outside assignment, solves issues, participates in aftercare', 'answer' => $validated['domain2_strand1_q1']],
-                ['section_name' => 'Domain 2 - Strand 2', 'question' => 'Shares in organization management and evaluation', 'answer' => $validated['domain2_strand2_q1']],
-                ['section_name' => 'Domain 2 - Strand 2', 'question' => 'Shares in university projects/activities management', 'answer' => $validated['domain2_strand2_q2']],
-                ['section_name' => 'Domain 2 - Strand 3', 'question' => 'Attends regular meetings', 'answer' => $validated['domain2_strand3_q1']],
-                ['section_name' => 'Domain 2 - Strand 3', 'question' => 'Attends special/emergency meetings', 'answer' => $validated['domain2_strand3_q2']],
-                // Domain 3 - All strands
-                ['section_name' => 'Domain 3 - Strand 1', 'question' => 'Model of grooming and proper decorum', 'answer' => $validated['domain3_strand1_q1']],
-                ['section_name' => 'Domain 3 - Strand 1', 'question' => 'Submits reports regularly', 'answer' => $validated['domain3_strand1_q2']],
-                ['section_name' => 'Domain 3 - Strand 2', 'question' => 'Ensures cleanliness and orderliness', 'answer' => $validated['domain3_strand2_q1']],
-            ];
+        $responses = [];
+        $evaluatorType = $validated['evaluator_type'];
+
+        // Generate dynamic responses from config
+        $evaluationConfig = config('evaluation_questions.domains');
+        foreach ($evaluationConfig as $domainIndex => $domain) {
+            foreach ($domain['strands'] as $strandIndex => $strand) {
+                foreach ($strand['questions'] as $questionIndex => $question) {
+                    if (in_array($evaluatorType, $question['access_levels'])) {
+                        $fieldName = 'domain' . ($domainIndex + 1) . '_strand' . ($strandIndex + 1) . '_q' . ($questionIndex + 1);
+                        $sectionName = 'Domain ' . ($domainIndex + 1) . ' - Strand ' . ($strandIndex + 1);
+
+                        if (isset($validated[$fieldName])) {
+                            $responses[] = [
+                                'section_name' => $sectionName,
+                                'question' => $question['text'],
+                                'answer' => $validated[$fieldName]
+                            ];
+                        }
+                    }
+                }
+            }
         }
+
+        return $responses;
     }
 }

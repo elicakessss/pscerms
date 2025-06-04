@@ -130,22 +130,6 @@ class CouncilController extends Controller
 
         $council->load(['department', 'councilOfficers.student']);
 
-        // Get available students based on council type
-        if ($council->department->abbreviation === 'UNIWIDE') {
-            // For Uniwide councils, get students from all departments except UNIWIDE
-            $availableStudents = Student::whereHas('department', function($query) {
-                $query->where('abbreviation', '!=', 'UNIWIDE');
-            })
-            ->with('department')
-            ->orderBy('last_name')
-            ->get();
-        } else {
-            // For departmental councils, get students from the same department
-            $availableStudents = Student::where('department_id', $council->department_id)
-                ->orderBy('last_name')
-                ->get();
-        }
-
         // Get all positions for this council type and merge with existing officers
         $allPositions = $this->getAllPositionsForCouncil($council);
 
@@ -155,7 +139,7 @@ class CouncilController extends Controller
             $evaluationProgress = $evaluationService->getEvaluationProgress($council);
         }
 
-        return view('adviser.my_councils.show', compact('council', 'availableStudents', 'allPositions', 'evaluationProgress'));
+        return view('adviser.my_councils.show', compact('council', 'allPositions', 'evaluationProgress'));
     }
 
     /**
@@ -505,6 +489,72 @@ class CouncilController extends Controller
 
         return redirect()->route('adviser.councils.index')
             ->with('success', "Council '{$councilName}' has been deleted successfully!");
+    }
+
+    /**
+     * Search for available students for assignment
+     */
+    public function searchStudents(Request $request, Council $council)
+    {
+        $adviser = Auth::user();
+
+        // Check if the council belongs to this adviser
+        if ($council->adviser_id !== $adviser->id) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        $search = $request->get('search', '');
+
+        if (strlen($search) < 2) {
+            return response()->json([]);
+        }
+
+        // Get available students based on council type
+        if ($council->department->abbreviation === 'UNIWIDE') {
+            // For Uniwide councils, get students from all departments except UNIWIDE
+            $students = Student::whereHas('department', function($query) {
+                $query->where('abbreviation', '!=', 'UNIWIDE');
+            })
+            ->whereDoesntHave('councilOfficers', function($query) use ($council) {
+                $query->whereHas('council', function($subQuery) use ($council) {
+                    $subQuery->where('academic_year', $council->academic_year);
+                });
+            })
+            ->where(function($query) use ($search) {
+                $query->where('first_name', 'like', "%{$search}%")
+                      ->orWhere('last_name', 'like', "%{$search}%")
+                      ->orWhere('id_number', 'like', "%{$search}%");
+            })
+            ->with('department')
+            ->orderBy('last_name')
+            ->limit(10)
+            ->get();
+        } else {
+            // For departmental councils, get students from the same department
+            $students = Student::where('department_id', $council->department_id)
+                ->whereDoesntHave('councilOfficers', function($query) use ($council) {
+                    $query->whereHas('council', function($subQuery) use ($council) {
+                        $subQuery->where('academic_year', $council->academic_year);
+                    });
+                })
+                ->where(function($query) use ($search) {
+                    $query->where('first_name', 'like', "%{$search}%")
+                          ->orWhere('last_name', 'like', "%{$search}%")
+                          ->orWhere('id_number', 'like', "%{$search}%");
+                })
+                ->orderBy('last_name')
+                ->limit(10)
+                ->get();
+        }
+
+        return response()->json($students->map(function($student) use ($council) {
+            return [
+                'id' => $student->id,
+                'name' => $student->first_name . ' ' . $student->last_name,
+                'id_number' => $student->id_number,
+                'department' => $council->department->abbreviation === 'UNIWIDE' ? $student->department->abbreviation : null,
+            ];
+        }));
     }
 
     /**

@@ -47,7 +47,36 @@ class EvaluationController extends Controller
                 ->with('error', 'You have already completed the evaluation for this student.');
         }
 
-        return view('evaluation.adviser', compact('council', 'student', 'officer'));
+        // Get evaluation questions from config
+        $evaluationConfig = config('evaluation_questions.domains');
+
+        // Filter questions for adviser access
+        $questions = [];
+        foreach ($evaluationConfig as $domain) {
+            $filteredDomain = $domain;
+            $filteredDomain['strands'] = [];
+
+            foreach ($domain['strands'] as $strand) {
+                $filteredStrand = $strand;
+                $filteredStrand['questions'] = [];
+
+                foreach ($strand['questions'] as $question) {
+                    if (in_array('adviser', $question['access_levels'])) {
+                        $filteredStrand['questions'][] = $question;
+                    }
+                }
+
+                if (!empty($filteredStrand['questions'])) {
+                    $filteredDomain['strands'][] = $filteredStrand;
+                }
+            }
+
+            if (!empty($filteredDomain['strands'])) {
+                $questions[] = $filteredDomain;
+            }
+        }
+
+        return view('evaluation.adviser', compact('council', 'student', 'officer', 'questions'));
     }
 
     /**
@@ -57,34 +86,30 @@ class EvaluationController extends Controller
     {
         $adviser = Auth::user();
 
-        // Validate the request
-        $validated = $request->validate([
+        // Get evaluation questions from config
+        $evaluationConfig = config('evaluation_questions.domains');
+
+        // Generate dynamic validation rules
+        $validationRules = [
             'council_id' => 'required|exists:councils,id',
             'evaluated_student_id' => 'required|exists:students,id',
             'evaluator_type' => 'required|in:adviser',
-            // Domain 1 - Strand 1
-            'domain1_strand1_q1' => 'required|numeric|in:0.00,1.00,2.00,3.00',
-            'domain1_strand1_q2' => 'required|numeric|in:0.00,1.00,2.00,3.00',
-            'domain1_strand1_q3' => 'required|numeric|in:0.00,1.00,2.00,3.00',
-            'domain1_strand1_q4' => 'required|numeric|in:0.00,1.00,2.00,3.00',
-            // Domain 1 - Strand 2
-            'domain1_strand2_q1' => 'required|numeric|in:0.00,1.00,2.00,3.00',
-            // Domain 2 - Strand 1
-            'domain2_strand1_q1' => 'required|numeric|in:0.00,1.00,2.00,3.00',
-            // Domain 2 - Strand 2
-            'domain2_strand2_q1' => 'required|numeric|in:0.00,1.00,2.00,3.00',
-            'domain2_strand2_q2' => 'required|numeric|in:0.00,1.00,2.00,3.00',
-            // Domain 2 - Strand 3
-            'domain2_strand3_q1' => 'required|numeric|in:0.00,1.00,2.00,3.00',
-            'domain2_strand3_q2' => 'required|numeric|in:0.00,1.00,2.00,3.00',
-            // Domain 3 - Strand 1
-            'domain3_strand1_q1' => 'required|numeric|in:0.00,1.00,2.00,3.00',
-            'domain3_strand1_q2' => 'required|numeric|in:0.00,1.00,2.00,3.00',
-            // Domain 3 - Strand 2
-            'domain3_strand2_q1' => 'required|numeric|in:0.00,1.00,2.00,3.00',
-            // Length of Service
             'length_of_service' => 'required|numeric|in:0.00,1.00,2.00,3.00',
-        ]);
+        ];
+
+        // Generate validation rules from config
+        foreach ($evaluationConfig as $domainIndex => $domain) {
+            foreach ($domain['strands'] as $strandIndex => $strand) {
+                foreach ($strand['questions'] as $questionIndex => $question) {
+                    if (in_array('adviser', $question['access_levels'])) {
+                        $fieldName = 'domain' . ($domainIndex + 1) . '_strand' . ($strandIndex + 1) . '_q' . ($questionIndex + 1);
+                        $validationRules[$fieldName] = 'required|numeric|in:0.00,1.00,2.00,3.00';
+                    }
+                }
+            }
+        }
+
+        $validated = $request->validate($validationRules);
 
         $council = Council::findOrFail($validated['council_id']);
 
@@ -124,30 +149,33 @@ class EvaluationController extends Controller
             // Delete existing evaluation forms for this evaluation
             EvaluationForm::where('evaluation_id', $evaluation->id)->delete();
 
-            // Store all evaluation responses
-            $responses = [
-                // Domain 1 - Strand 1
-                ['section_name' => 'Domain 1 - Strand 1', 'question' => 'Organizes/co-organizes seminars and activities', 'answer' => $validated['domain1_strand1_q1']],
-                ['section_name' => 'Domain 1 - Strand 1', 'question' => 'Facilitates/co-facilitates seminars and activities', 'answer' => $validated['domain1_strand1_q2']],
-                ['section_name' => 'Domain 1 - Strand 1', 'question' => 'Participates in seminars and activities', 'answer' => $validated['domain1_strand1_q3']],
-                ['section_name' => 'Domain 1 - Strand 1', 'question' => 'Attends SPUP-organized seminars and activities', 'answer' => $validated['domain1_strand1_q4']],
-                // Domain 1 - Strand 2
-                ['section_name' => 'Domain 1 - Strand 2', 'question' => 'Ensures quality in all tasks/assignments', 'answer' => $validated['domain1_strand2_q1']],
-                // Domain 2 - Strand 1
-                ['section_name' => 'Domain 2 - Strand 1', 'question' => 'Performs tasks outside assignment, solves issues, participates in aftercare', 'answer' => $validated['domain2_strand1_q1']],
-                // Domain 2 - Strand 2
-                ['section_name' => 'Domain 2 - Strand 2', 'question' => 'Shares in organization management and evaluation', 'answer' => $validated['domain2_strand2_q1']],
-                ['section_name' => 'Domain 2 - Strand 2', 'question' => 'Shares in university projects/activities management', 'answer' => $validated['domain2_strand2_q2']],
-                // Domain 2 - Strand 3
-                ['section_name' => 'Domain 2 - Strand 3', 'question' => 'Attends regular meetings', 'answer' => $validated['domain2_strand3_q1']],
-                ['section_name' => 'Domain 2 - Strand 3', 'question' => 'Attends special/emergency meetings', 'answer' => $validated['domain2_strand3_q2']],
-                // Domain 3 - Strand 1
-                ['section_name' => 'Domain 3 - Strand 1', 'question' => 'Model of grooming and proper decorum', 'answer' => $validated['domain3_strand1_q1']],
-                ['section_name' => 'Domain 3 - Strand 1', 'question' => 'Submits reports regularly', 'answer' => $validated['domain3_strand1_q2']],
-                // Domain 3 - Strand 2
-                ['section_name' => 'Domain 3 - Strand 2', 'question' => 'Ensures cleanliness and orderliness', 'answer' => $validated['domain3_strand2_q1']],
-                // Length of Service
-                ['section_name' => 'Length of Service', 'question' => 'Length of Service Evaluation', 'answer' => $validated['length_of_service']],
+            // Generate dynamic responses from config
+            $responses = [];
+            $evaluationConfig = config('evaluation_questions.domains');
+
+            // Add evaluation questions responses
+            foreach ($evaluationConfig as $domainIndex => $domain) {
+                foreach ($domain['strands'] as $strandIndex => $strand) {
+                    foreach ($strand['questions'] as $questionIndex => $question) {
+                        if (in_array('adviser', $question['access_levels'])) {
+                            $fieldName = 'domain' . ($domainIndex + 1) . '_strand' . ($strandIndex + 1) . '_q' . ($questionIndex + 1);
+                            $sectionName = 'Domain ' . ($domainIndex + 1) . ' - Strand ' . ($strandIndex + 1);
+
+                            $responses[] = [
+                                'section_name' => $sectionName,
+                                'question' => $question['text'],
+                                'answer' => $validated[$fieldName]
+                            ];
+                        }
+                    }
+                }
+            }
+
+            // Add length of service
+            $responses[] = [
+                'section_name' => 'Length of Service',
+                'question' => 'Length of Service Evaluation',
+                'answer' => $validated['length_of_service']
             ];
 
             foreach ($responses as $response) {

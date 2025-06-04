@@ -48,6 +48,15 @@
             background: linear-gradient(180deg, #064e3b 0%, #065f46 50%, #047857 100%);
         }
 
+        /* Fix dropdown text visibility */
+        select {
+            color: #374151 !important;
+        }
+        select option {
+            color: #374151 !important;
+            background: white !important;
+        }
+
         h1 { font-size: 18px; font-weight: 600; }
         h2 { font-size: 16px; font-weight: 600; }
         h3 { font-size: 14px; font-weight: 500; }
@@ -123,6 +132,12 @@
                    class="flex items-center space-x-3 p-3 rounded-lg hover:bg-green-600 transition-colors nav-link {{ request()->routeIs('admin.council_management.*') ? 'active-nav' : '' }}">
                     <i class="fas fa-user-tie w-5"></i>
                     <span>Councils</span>
+                </a>
+
+                <a href="{{ route('admin.evaluation_forms.index') }}"
+                   class="flex items-center space-x-3 p-3 rounded-lg hover:bg-green-600 transition-colors nav-link {{ request()->routeIs('admin.evaluation_forms.*') ? 'active-nav' : '' }}">
+                    <i class="fas fa-clipboard-list w-5"></i>
+                    <span>Evaluation Forms</span>
                 </a>
 
                 <a href="{{ route('admin.account.index') }}"

@@ -361,19 +361,14 @@
                                                     }
                                                     $placeholder = $requiredDept ? "Select {$requiredDept} student" : "Select Student";
                                                 @endphp
-                                                <select name="student_id" class="text-xs border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-green-500 min-w-32" required>
-                                                    <option value="">{{ $placeholder }}</option>
-                                                    @foreach($availableStudents as $student)
-                                                        @if(!$requiredDept || $student->department->abbreviation === $requiredDept)
-                                                            <option value="{{ $student->id }}">
-                                                                {{ $student->first_name }} {{ $student->last_name }}
-                                                                @if($council->department->abbreviation === 'UNIWIDE' && !$requiredDept)
-                                                                    ({{ $student->department->abbreviation }})
-                                                                @endif
-                                                            </option>
-                                                        @endif
-                                                    @endforeach
-                                                </select>
+                                                <div class="relative min-w-32">
+                                                    <input type="hidden" name="student_id" class="selected-student-id" required>
+                                                    <input type="text"
+                                                           class="student-search-input text-xs border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-green-500 w-full"
+                                                           placeholder="{{ $placeholder }}"
+                                                           autocomplete="off">
+                                                    <div class="search-results absolute z-10 w-full bg-white border border-gray-300 rounded-b shadow-lg hidden max-h-40 overflow-y-auto"></div>
+                                                </div>
                                                 <button type="submit" class="inline-flex items-center px-3 py-1.5 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition-colors">
                                                     <i class="fas fa-plus mr-1"></i>
                                                     Assign
@@ -411,17 +406,15 @@
                                 </div>
                                 <div>
                                     <label for="senator_student_id" class="block text-sm font-medium text-gray-700 mb-1">Assign Student</label>
-                                    <select name="student_id"
-                                            id="senator_student_id"
-                                            class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent @error('student_id') border-red-500 @enderror"
-                                            required>
-                                        <option value="">Select Student</option>
-                                        @foreach($availableStudents as $student)
-                                            <option value="{{ $student->id }}" {{ old('student_id') == $student->id ? 'selected' : '' }}>
-                                                {{ $student->first_name }} {{ $student->last_name }} ({{ $student->id_number }}) - {{ $student->department->abbreviation }}
-                                            </option>
-                                        @endforeach
-                                    </select>
+                                    <div class="relative">
+                                        <input type="hidden" name="student_id" class="selected-student-id" required>
+                                        <input type="text"
+                                               id="senator_student_id"
+                                               class="student-search-input w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent @error('student_id') border-red-500 @enderror"
+                                               placeholder="Search for student..."
+                                               autocomplete="off">
+                                        <div class="search-results absolute z-10 w-full bg-white border border-gray-300 rounded-b shadow-lg hidden max-h-40 overflow-y-auto"></div>
+                                    </div>
                                     @error('student_id')
                                         <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                                     @enderror
@@ -457,18 +450,15 @@
                                 </div>
                                 <div>
                                     <label for="congressman_student_id" class="block text-sm font-medium text-gray-700 mb-1">Assign Student</label>
-                                    <select name="student_id"
-                                            id="congressman_student_id"
-                                            class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent @error('student_id') border-red-500 @enderror"
-                                            onchange="updateRepresentativeTitle()"
-                                            required>
-                                        <option value="">Select Student</option>
-                                        @foreach($availableStudents as $student)
-                                            <option value="{{ $student->id }}" data-department="{{ $student->department->abbreviation }}" {{ old('student_id') == $student->id ? 'selected' : '' }}>
-                                                {{ $student->first_name }} {{ $student->last_name }} ({{ $student->id_number }}) - {{ $student->department->abbreviation }}
-                                            </option>
-                                        @endforeach
-                                    </select>
+                                    <div class="relative">
+                                        <input type="hidden" name="student_id" class="selected-student-id" required>
+                                        <input type="text"
+                                               id="congressman_student_id"
+                                               class="student-search-input w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent @error('student_id') border-red-500 @enderror"
+                                               placeholder="Search for student..."
+                                               autocomplete="off">
+                                        <div class="search-results absolute z-10 w-full bg-white border border-gray-300 rounded-b shadow-lg hidden max-h-40 overflow-y-auto"></div>
+                                    </div>
                                     @error('student_id')
                                         <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                                     @enderror
@@ -503,17 +493,15 @@
                                 </div>
                                 <div>
                                     <label for="justice_student_id" class="block text-sm font-medium text-gray-700 mb-1">Assign Student</label>
-                                    <select name="student_id"
-                                            id="justice_student_id"
-                                            class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent @error('student_id') border-red-500 @enderror"
-                                            required>
-                                        <option value="">Select Student</option>
-                                        @foreach($availableStudents as $student)
-                                            <option value="{{ $student->id }}" {{ old('student_id') == $student->id ? 'selected' : '' }}>
-                                                {{ $student->first_name }} {{ $student->last_name }} ({{ $student->id_number }}) - {{ $student->department->abbreviation }}
-                                            </option>
-                                        @endforeach
-                                    </select>
+                                    <div class="relative">
+                                        <input type="hidden" name="student_id" class="selected-student-id" required>
+                                        <input type="text"
+                                               id="justice_student_id"
+                                               class="student-search-input w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent @error('student_id') border-red-500 @enderror"
+                                               placeholder="Search for student..."
+                                               autocomplete="off">
+                                        <div class="search-results absolute z-10 w-full bg-white border border-gray-300 rounded-b shadow-lg hidden max-h-40 overflow-y-auto"></div>
+                                    </div>
                                     @error('student_id')
                                         <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                                     @enderror
@@ -548,20 +536,15 @@
                                 </div>
                                 <div>
                                     <label for="coordinator_student_id" class="block text-sm font-medium text-gray-700 mb-1">Assign Student</label>
-                                    <select name="student_id"
-                                            id="coordinator_student_id"
-                                            class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent @error('student_id') border-red-500 @enderror"
-                                            required>
-                                        <option value="">Select Student</option>
-                                        @foreach($availableStudents as $student)
-                                            <option value="{{ $student->id }}" {{ old('student_id') == $student->id ? 'selected' : '' }}>
-                                                {{ $student->first_name }} {{ $student->last_name }} ({{ $student->id_number }})
-                                                @if($council->department->abbreviation === 'UNIWIDE')
-                                                    - {{ $student->department->abbreviation }}
-                                                @endif
-                                            </option>
-                                        @endforeach
-                                    </select>
+                                    <div class="relative">
+                                        <input type="hidden" name="student_id" class="selected-student-id" required>
+                                        <input type="text"
+                                               id="coordinator_student_id"
+                                               class="student-search-input w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent @error('student_id') border-red-500 @enderror"
+                                               placeholder="Search for student..."
+                                               autocomplete="off">
+                                        <div class="search-results absolute z-10 w-full bg-white border border-gray-300 rounded-b shadow-lg hidden max-h-40 overflow-y-auto"></div>
+                                    </div>
                                     @error('student_id')
                                         <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                                     @enderror
@@ -597,18 +580,16 @@
                                     <p class="text-xs text-gray-500 mt-1">"Coordinator" will be automatically added to the title</p>
                                 </div>
                                 <div>
-                                    <label for="coordinator_student_id" class="block text-sm font-medium text-gray-700 mb-1">Assign Student</label>
-                                    <select name="student_id"
-                                            id="coordinator_student_id"
-                                            class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent @error('student_id') border-red-500 @enderror"
-                                            required>
-                                        <option value="">Select Student</option>
-                                        @foreach($availableStudents as $student)
-                                            <option value="{{ $student->id }}" {{ old('student_id') == $student->id ? 'selected' : '' }}>
-                                                {{ $student->first_name }} {{ $student->last_name }} ({{ $student->id_number }})
-                                            </option>
-                                        @endforeach
-                                    </select>
+                                    <label for="coordinator_student_id_dept" class="block text-sm font-medium text-gray-700 mb-1">Assign Student</label>
+                                    <div class="relative">
+                                        <input type="hidden" name="student_id" class="selected-student-id" required>
+                                        <input type="text"
+                                               id="coordinator_student_id_dept"
+                                               class="student-search-input w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent @error('student_id') border-red-500 @enderror"
+                                               placeholder="Search for student..."
+                                               autocomplete="off">
+                                        <div class="search-results absolute z-10 w-full bg-white border border-gray-300 rounded-b shadow-lg hidden max-h-40 overflow-y-auto"></div>
+                                    </div>
                                     @error('student_id')
                                         <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                                     @enderror
@@ -1023,25 +1004,6 @@ document.getElementById('removeOfficerModal').addEventListener('click', function
     }
 });
 
-// Function to update representative title based on selected student's department
-function updateRepresentativeTitle() {
-    const studentSelect = document.getElementById('congressman_student_id');
-    const titleInput = document.getElementById('congressman_title');
-
-    if (studentSelect.value) {
-        const selectedOption = studentSelect.options[studentSelect.selectedIndex];
-        const department = selectedOption.getAttribute('data-department');
-
-        if (department && department !== 'UNIWIDE') {
-            titleInput.value = department + ' Representative';
-        } else {
-            titleInput.value = 'Representative';
-        }
-    } else {
-        titleInput.value = '';
-    }
-}
-
 // Confirm start evaluation for details page
 function confirmStartEvaluationDetails(councilName, officerCount) {
     showConfirmation(
@@ -1083,10 +1045,97 @@ document.addEventListener('click', function(e) {
     }
 });
 
+// Student search functionality
+function initializeStudentSearch() {
+    const searchInputs = document.querySelectorAll('.student-search-input');
+
+    searchInputs.forEach(input => {
+        let searchTimeout;
+
+        input.addEventListener('input', function() {
+            const searchTerm = this.value.trim();
+            const resultsContainer = this.nextElementSibling;
+            const hiddenInput = this.previousElementSibling;
+
+            // Clear previous timeout
+            clearTimeout(searchTimeout);
+
+            if (searchTerm.length < 2) {
+                resultsContainer.classList.add('hidden');
+                hiddenInput.value = '';
+                return;
+            }
+
+            // Debounce search
+            searchTimeout = setTimeout(() => {
+                fetch(`{{ route('adviser.councils.search_students', $council) }}?search=${encodeURIComponent(searchTerm)}`)
+                    .then(response => response.json())
+                    .then(students => {
+                        resultsContainer.innerHTML = '';
+
+                        if (students.length === 0) {
+                            resultsContainer.innerHTML = '<div class="px-3 py-2 text-sm text-gray-500">No students found</div>';
+                        } else {
+                            students.forEach(student => {
+                                const div = document.createElement('div');
+                                div.className = 'px-3 py-2 hover:bg-gray-100 cursor-pointer text-sm border-b border-gray-100 last:border-b-0';
+                                div.innerHTML = `
+                                    <div class="font-medium text-gray-900">${student.name}</div>
+                                    <div class="text-xs text-gray-500">${student.id_number}${student.department ? ' - ' + student.department : ''}</div>
+                                `;
+
+                                div.addEventListener('click', () => {
+                                    input.value = student.name;
+                                    hiddenInput.value = student.id;
+                                    resultsContainer.classList.add('hidden');
+
+                                    // Update representative title if this is the congressman input
+                                    if (input.id === 'congressman_student_id' && student.department) {
+                                        const titleInput = document.getElementById('congressman_title');
+                                        if (titleInput) {
+                                            titleInput.value = student.department + ' Representative';
+                                        }
+                                    }
+                                });
+
+                                resultsContainer.appendChild(div);
+                            });
+                        }
+
+                        resultsContainer.classList.remove('hidden');
+                    })
+                    .catch(error => {
+                        console.error('Search error:', error);
+                        resultsContainer.innerHTML = '<div class="px-3 py-2 text-sm text-red-500">Search error occurred</div>';
+                        resultsContainer.classList.remove('hidden');
+                    });
+            }, 300);
+        });
+
+        // Hide results when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!input.contains(e.target) && !input.nextElementSibling.contains(e.target)) {
+                input.nextElementSibling.classList.add('hidden');
+            }
+        });
+
+        // Clear selection when input is manually cleared
+        input.addEventListener('keydown', function(e) {
+            if (e.key === 'Backspace' || e.key === 'Delete') {
+                const hiddenInput = this.previousElementSibling;
+                hiddenInput.value = '';
+            }
+        });
+    });
+}
+
 // Initialize the page
 document.addEventListener('DOMContentLoaded', function() {
     // Show officers section by default
     showSection('officers');
+
+    // Initialize student search functionality
+    initializeStudentSearch();
 });
 </script>
 @endsection

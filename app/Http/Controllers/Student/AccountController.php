@@ -2,17 +2,24 @@
 
 namespace App\Http\Controllers\Student;
 
-use App\Http\Controllers\Controller;
+use App\Http\Controllers\BaseAccountController;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Storage;
 
-class AccountController extends Controller
+class AccountController extends BaseAccountController
 {
+    protected function getUserType(): string
+    {
+        return 'student';
+    }
+
+    protected function getAccountIndexRoute(): string
+    {
+        return 'student.account.index';
+    }
+
     public function index()
     {
-        $student = Auth::user();
+        $student = $this->getAuthenticatedUser();
 
         // Get completed councils for portfolio
         $completedCouncils = $student->councilOfficers()
@@ -27,54 +34,13 @@ class AccountController extends Controller
 
     public function edit()
     {
-        $student = Auth::user();
+        $student = $this->getAuthenticatedUser();
         return view('student.account.edit', compact('student'));
     }
 
     public function update(Request $request)
     {
-        $student = Auth::user();
-
-        $validated = $request->validate([
-            'email' => 'required|email|max:255|unique:students,email,' . $student->id,
-            'profile_picture' => 'nullable|image|max:2048',
-        ]);
-
-        if ($request->hasFile('profile_picture')) {
-            // Delete old profile picture if exists
-            if ($student->profile_picture) {
-                Storage::delete('public/' . $student->profile_picture);
-            }
-
-            // Store new profile picture
-            $path = $request->file('profile_picture')->store('profile_pictures/students', 'public');
-            $validated['profile_picture'] = $path;
-        }
-
-        $student->update($validated);
-
-        return redirect()->route('student.account.index')->with('success', 'Profile updated successfully!');
-    }
-
-    public function updatePassword(Request $request)
-    {
-        $validated = $request->validate([
-            'current_password' => 'required|digits:6',
-            'password' => 'required|digits:6|confirmed',
-        ]);
-
-        $student = Auth::user();
-
-        // Check current password
-        if (!Hash::check($validated['current_password'], $student->password)) {
-            return back()->withErrors(['current_password' => 'The current password is incorrect.']);
-        }
-
-        $student->update([
-            'password' => Hash::make($validated['password']),
-        ]);
-
-        return redirect()->route('student.account.index')->with('success', 'Password updated successfully!');
+        return $this->updateProfile($request);
     }
 }
 
