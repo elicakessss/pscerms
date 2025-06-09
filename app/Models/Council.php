@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Validation\ValidationException;
 
 class Council extends Model
 {
@@ -18,9 +19,60 @@ class Council extends Model
         'name',
         'academic_year',
         'status',
+        'evaluation_instance_status',
+        'evaluation_instance_started_at',
+        'evaluation_instance_finalized_at',
         'adviser_id',
         'department_id',
     ];
+
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array<string, string>
+     */
+    protected $casts = [
+        'evaluation_instance_started_at' => 'datetime',
+        'evaluation_instance_finalized_at' => 'datetime',
+    ];
+
+    /**
+     * Boot the model and add event listeners
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        // Validate uniqueness before creating
+        static::creating(function ($council) {
+            static::validateUniqueness($council);
+        });
+
+        // Validate uniqueness before updating
+        static::updating(function ($council) {
+            static::validateUniqueness($council);
+        });
+    }
+
+    /**
+     * Validate that only one council exists per department per academic year
+     */
+    protected static function validateUniqueness($council)
+    {
+        $query = static::where('department_id', $council->department_id)
+            ->where('academic_year', $council->academic_year);
+
+        // Exclude current council if updating
+        if ($council->exists) {
+            $query->where('id', '!=', $council->id);
+        }
+
+        if ($query->exists()) {
+            throw ValidationException::withMessages([
+                'academic_year' => 'A council already exists for this department and academic year.'
+            ]);
+        }
+    }
 
     /**
      * Get the department that owns the council.
@@ -61,8 +113,44 @@ class Council extends Model
     {
         return $this->status === 'active' &&
                $this->councilOfficers()->count() > 0 &&
-               !$this->hasEvaluations() &&
+               $this->evaluation_instance_status === 'not_started' &&
                $this->hasPeerEvaluatorsAssigned();
+    }
+
+    /**
+     * Check if evaluation instance can be started
+     */
+    public function canStartEvaluationInstance()
+    {
+        return $this->status === 'active' &&
+               $this->councilOfficers()->count() > 0 &&
+               $this->evaluation_instance_status === 'not_started' &&
+               $this->hasPeerEvaluatorsAssigned();
+    }
+
+    /**
+     * Check if evaluation instance can be finalized
+     */
+    public function canFinalizeEvaluationInstance()
+    {
+        return $this->evaluation_instance_status === 'active' &&
+               $this->allEvaluationsCompleted();
+    }
+
+    /**
+     * Check if evaluation instance is active (evaluations can be edited)
+     */
+    public function isEvaluationInstanceActive()
+    {
+        return $this->evaluation_instance_status === 'active';
+    }
+
+    /**
+     * Check if evaluation instance is finalized (evaluations are locked)
+     */
+    public function isEvaluationInstanceFinalized()
+    {
+        return $this->evaluation_instance_status === 'finalized';
     }
 
     /**
@@ -90,7 +178,7 @@ class Council extends Model
      */
     public function hasEvaluations()
     {
-        return $this->evaluations()->exists();
+        return $this->evaluation_instance_status !== 'not_started';
     }
 
     /**

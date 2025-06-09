@@ -11,15 +11,21 @@ class EvaluationService
 {
     /**
      * Start evaluations for a council
-     * Creates all required evaluation instances
+     * Creates all required evaluation instances and starts the evaluation instance
      */
     public function startEvaluations(Council $council)
     {
-        if (!$council->canStartEvaluations()) {
+        if (!$council->canStartEvaluationInstance()) {
             throw new \Exception('Cannot start evaluations for this council.');
         }
 
         DB::transaction(function () use ($council) {
+            // Update council evaluation instance status
+            $council->update([
+                'evaluation_instance_status' => 'active',
+                'evaluation_instance_started_at' => now(),
+            ]);
+
             // Get all council officers
             $officers = $council->councilOfficers()->with('student')->get();
 
@@ -35,6 +41,34 @@ class EvaluationService
 
             // Create adviser evaluations from adviser to all members
             $this->createAdviserEvaluations($council, $officers);
+        });
+
+        return true;
+    }
+
+    /**
+     * Finalize evaluation instance for a council
+     * Locks all evaluations and calculates final scores
+     */
+    public function finalizeEvaluationInstance(Council $council)
+    {
+        if (!$council->canFinalizeEvaluationInstance()) {
+            throw new \Exception('Cannot finalize evaluation instance. Not all evaluations are completed.');
+        }
+
+        DB::transaction(function () use ($council) {
+            // Update council evaluation instance status
+            $council->update([
+                'evaluation_instance_status' => 'finalized',
+                'evaluation_instance_finalized_at' => now(),
+            ]);
+
+            // Calculate final scores for all officers
+            $scoreService = new ScoreCalculationService();
+            $scoreService->calculateCouncilScores($council);
+
+            // Mark council as completed if all scores are calculated
+            $this->markCouncilAsCompletedIfReady($council);
         });
 
         return true;
@@ -159,6 +193,13 @@ class EvaluationService
 
             // Delete all evaluations
             $council->evaluations()->delete();
+
+            // Reset evaluation instance status
+            $council->update([
+                'evaluation_instance_status' => 'not_started',
+                'evaluation_instance_started_at' => null,
+                'evaluation_instance_finalized_at' => null,
+            ]);
 
             // Clear scores from council officers
             $council->councilOfficers()->update([

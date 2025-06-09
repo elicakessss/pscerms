@@ -116,6 +116,8 @@ class EvaluationController extends Controller
             'evaluator_type' => 'required|in:self,peer',
         ];
 
+
+
         // Get evaluation type specific rules that match exactly what the form shows
         $evaluationRules = $this->getValidationRulesForEvaluatorType($request->evaluator_type);
 
@@ -214,6 +216,183 @@ class EvaluationController extends Controller
     }
 
     /**
+     * Show the self-evaluation edit form
+     */
+    public function editSelf(Council $council)
+    {
+        $student = Auth::user();
+
+        // Check if student is an officer in this council
+        $officer = CouncilOfficer::where('council_id', $council->id)
+            ->where('student_id', $student->id)
+            ->first();
+
+        if (!$officer) {
+            abort(404, 'You are not an officer in this council.');
+        }
+
+        // Get existing evaluation
+        $evaluation = Evaluation::where('council_id', $council->id)
+            ->where('evaluator_id', $student->id)
+            ->where('evaluator_type', 'self')
+            ->where('evaluated_student_id', $student->id)
+            ->where('status', 'completed')
+            ->first();
+
+        if (!$evaluation) {
+            return redirect()->route('student.evaluation.self', $council)
+                ->with('error', 'No completed evaluation found to edit.');
+        }
+
+        // Get filtered questions for self evaluation
+        $questions = $this->getFilteredQuestions('self');
+
+        // Get existing responses
+        $existingResponses = $evaluation->getFormattedResponses();
+
+        return view('evaluation.self', compact('council', 'officer', 'questions', 'evaluation', 'existingResponses'));
+    }
+
+    /**
+     * Show the peer evaluation edit form
+     */
+    public function editPeer(Council $council, Student $evaluatedStudent)
+    {
+        $student = Auth::user();
+
+        // Check if student is an officer in this council
+        $officer = CouncilOfficer::where('council_id', $council->id)
+            ->where('student_id', $student->id)
+            ->first();
+
+        if (!$officer) {
+            abort(404, 'You are not an officer in this council.');
+        }
+
+        // Get existing evaluation
+        $evaluation = Evaluation::where('council_id', $council->id)
+            ->where('evaluator_id', $student->id)
+            ->where('evaluator_type', 'peer')
+            ->where('evaluated_student_id', $evaluatedStudent->id)
+            ->where('status', 'completed')
+            ->first();
+
+        if (!$evaluation) {
+            return redirect()->route('student.evaluation.peer', [$council, $evaluatedStudent])
+                ->with('error', 'No completed evaluation found to edit.');
+        }
+
+        // Get filtered questions for peer evaluation
+        $questions = $this->getFilteredQuestions('peer');
+
+        // Get existing responses
+        $existingResponses = $evaluation->getFormattedResponses();
+
+        return view('evaluation.peer', [
+            'council' => $council,
+            'student' => $evaluatedStudent,
+            'officer' => $officer,
+            'questions' => $questions,
+            'evaluation' => $evaluation,
+            'existingResponses' => $existingResponses
+        ]);
+    }
+
+    /**
+     * Update an existing evaluation
+     */
+    public function update(Request $request, Evaluation $evaluation)
+    {
+        $student = Auth::user();
+
+        // Check if this evaluation belongs to the current student
+        if ($evaluation->evaluator_id !== $student->id || !in_array($evaluation->evaluator_type, ['self', 'peer'])) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        // Check if evaluation can be edited
+        if (!$evaluation->canBeEdited()) {
+            return redirect()->route('student.dashboard')
+                ->with('error', 'This evaluation cannot be edited.');
+        }
+
+        // Base validation rules
+        $baseRules = [
+            'council_id' => 'required|exists:councils,id',
+            'evaluated_student_id' => 'required|exists:students,id',
+            'evaluator_type' => 'required|in:self,peer',
+        ];
+
+
+
+        // Get evaluation type specific rules
+        $evaluationRules = $this->getValidationRulesForEvaluatorType($request->evaluator_type);
+
+        $validated = $request->validate(array_merge($baseRules, $evaluationRules));
+
+        $council = Council::findOrFail($validated['council_id']);
+
+        DB::transaction(function () use ($validated, $student, $evaluation) {
+            // Update the evaluation record
+            $evaluation->update([
+                'submitted_at' => now(),
+            ]);
+
+            // Delete existing evaluation forms for this evaluation
+            EvaluationForm::where('evaluation_id', $evaluation->id)->delete();
+
+            // Store evaluation responses based on type
+            $responses = $this->getEvaluationResponses($validated);
+
+            foreach ($responses as $response) {
+                EvaluationForm::create([
+                    'evaluation_id' => $evaluation->id,
+                    'section_name' => $response['section_name'],
+                    'question' => $response['question'],
+                    'answer' => $response['answer'],
+                ]);
+            }
+        });
+
+        $evaluationType = $validated['evaluator_type'] === 'self' ? 'self-evaluation' : 'peer evaluation';
+
+        // Try to calculate scores if all evaluations are ready and instance is finalized
+        $evaluationService = new \App\Services\EvaluationService();
+        $scoresCalculated = false;
+        if ($council->isEvaluationInstanceFinalized()) {
+            $scoresCalculated = $evaluationService->calculateScoresIfReady($council);
+        }
+
+        // Get evaluation progress
+        $progress = $evaluationService->getEvaluationProgress($council);
+
+        if ($council->isEvaluationInstanceActive()) {
+            $message = ucfirst($evaluationType) . ' saved as draft successfully! You can edit this evaluation until the adviser finalizes the instance.';
+        } else {
+            $message = ucfirst($evaluationType) . ' updated successfully!';
+
+            if ($scoresCalculated) {
+                $message .= ' All evaluations are now complete and scores have been recalculated.';
+
+                // Check if council was completed
+                $council->refresh();
+                if ($council->status === 'completed') {
+                    $message .= ' The council evaluation process has been completed and the council is now closed.';
+                }
+            } else {
+                $remaining = $progress['evaluations_total'] - $progress['evaluations_completed'];
+                $message .= " Progress: {$progress['evaluations_completed']}/{$progress['evaluations_total']} evaluations completed ({$progress['completion_percentage']}%).";
+                if ($remaining > 0) {
+                    $message .= " {$remaining} evaluations remaining.";
+                }
+            }
+        }
+
+        return redirect()->route('student.councils.show', $council)
+            ->with('success', $message);
+    }
+
+    /**
      * Get filtered questions for a specific evaluator type
      * This ensures consistency between form display and validation
      */
@@ -285,11 +464,10 @@ class EvaluationController extends Controller
                 foreach ($strand['questions'] as $questionIndex => $question) {
                     if (in_array($evaluatorType, $question['access_levels'])) {
                         $fieldName = 'domain' . ($domainIndex + 1) . '_strand' . ($strandIndex + 1) . '_q' . ($questionIndex + 1);
-                        $sectionName = 'Domain ' . ($domainIndex + 1) . ' - Strand ' . ($strandIndex + 1);
 
                         if (isset($validated[$fieldName])) {
                             $responses[] = [
-                                'section_name' => $sectionName,
+                                'section_name' => $fieldName, // Use field name instead of section name for consistency
                                 'question' => $question['text'],
                                 'answer' => $validated[$fieldName]
                             ];
@@ -298,6 +476,8 @@ class EvaluationController extends Controller
                 }
             }
         }
+
+
 
         return $responses;
     }

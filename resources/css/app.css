@@ -1,5 +1,3 @@
-/* Add this to your resources/css/app.css file to override font sizes */
-
 /* Base font size for the entire application */
 html, body {
     font-size: 12px !important;
@@ -33,5 +31,3 @@ a { font-size: 12px !important; }
 /* Form elements */
 .form-label { font-size: 11px !important; }
 .form-input { font-size: 12px !important; }
-
-

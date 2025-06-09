@@ -9,6 +9,7 @@ use App\Models\Student;
 use App\Models\CouncilOfficer;
 use App\Services\EvaluationService;
 use Illuminate\Support\Facades\Auth;
+use App\Rules\UniqueCouncilPerDepartmentYear;
 use Illuminate\Support\Facades\DB;
 
 class CouncilController extends Controller
@@ -73,7 +74,8 @@ class CouncilController extends Controller
                     if ($endYear !== $startYear + 1) {
                         $fail('The academic year must be consecutive years (e.g., 2024-2025).');
                     }
-                }
+                },
+                new UniqueCouncilPerDepartmentYear($adviser->department_id)
             ],
         ]);
 
@@ -89,16 +91,7 @@ class CouncilController extends Controller
             ])->withInput();
         }
 
-        // Check if department already has a council for this academic year
-        $departmentCouncil = Council::where('department_id', $adviser->department_id)
-            ->where('academic_year', $validated['academic_year'])
-            ->first();
 
-        if ($departmentCouncil) {
-            return back()->withErrors([
-                'academic_year' => 'Your department already has a council for this academic year.'
-            ])->withInput();
-        }
 
         // Create council name based on department
         $councilName = 'Paulinian Student Government - ' . $adviser->department->abbreviation;
@@ -471,21 +464,26 @@ class CouncilController extends Controller
             abort(403, 'Unauthorized action.');
         }
 
-        // Check if council has any evaluations - prevent deletion if evaluations exist
-        if ($council->hasEvaluations()) {
-            return back()->withErrors([
-                'error' => 'Cannot delete council with existing evaluations. Please clear evaluations first.'
-            ]);
-        }
-
         // Store council name for success message
         $councilName = $council->name;
 
-        // Delete all associated council officers first
-        $council->councilOfficers()->delete();
+        // Use database transaction to ensure all deletions succeed or fail together
+        DB::transaction(function () use ($council) {
+            // Delete all evaluation forms first (due to foreign key constraints)
+            if ($council->hasEvaluations()) {
+                $evaluationIds = $council->evaluations()->pluck('id');
+                \App\Models\EvaluationForm::whereIn('evaluation_id', $evaluationIds)->delete();
 
-        // Delete the council
-        $council->delete();
+                // Delete all evaluations
+                $council->evaluations()->delete();
+            }
+
+            // Delete all associated council officers
+            $council->councilOfficers()->delete();
+
+            // Delete the council
+            $council->delete();
+        });
 
         return redirect()->route('adviser.councils.index')
             ->with('success', "Council '{$councilName}' has been deleted successfully!");
@@ -764,10 +762,33 @@ class CouncilController extends Controller
             $evaluationService->startEvaluations($council);
 
             return redirect()->route('adviser.councils.show', $council)
-                ->with('success', 'Evaluations started successfully! All evaluation instances have been created.');
+                ->with('success', 'Evaluation instance started successfully! All evaluations can now be submitted as drafts and edited until finalized.');
         } catch (\Exception $e) {
             return redirect()->route('adviser.councils.show', $council)
-                ->with('error', 'Failed to start evaluations: ' . $e->getMessage());
+                ->with('error', 'Failed to start evaluation instance: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Finalize evaluation instance for a council
+     */
+    public function finalizeEvaluationInstance(Council $council, EvaluationService $evaluationService)
+    {
+        $adviser = Auth::user();
+
+        // Check if the council belongs to this adviser
+        if ($council->adviser_id !== $adviser->id) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        try {
+            $evaluationService->finalizeEvaluationInstance($council);
+
+            return redirect()->route('adviser.councils.show', $council)
+                ->with('success', 'Evaluation instance finalized successfully! All evaluations are now locked and final scores have been calculated.');
+        } catch (\Exception $e) {
+            return redirect()->route('adviser.councils.show', $council)
+                ->with('error', 'Failed to finalize evaluation instance: ' . $e->getMessage());
         }
     }
 

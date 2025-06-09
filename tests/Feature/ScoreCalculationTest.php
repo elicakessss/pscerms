@@ -250,7 +250,8 @@ class ScoreCalculationTest extends TestCase
         $this->assertEquals('Gold', $this->scoreService->getRankingCategory(2.50));
         $this->assertEquals('Silver', $this->scoreService->getRankingCategory(2.00));
         $this->assertEquals('Bronze', $this->scoreService->getRankingCategory(1.50));
-        $this->assertEquals('No Award', $this->scoreService->getRankingCategory(1.00));
+        $this->assertEquals('Certificate', $this->scoreService->getRankingCategory(1.00));
+        $this->assertEquals('No Award', $this->scoreService->getRankingCategory(0.50));
     }
 
     /** @test */

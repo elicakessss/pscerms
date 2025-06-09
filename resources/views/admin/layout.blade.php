@@ -146,8 +146,8 @@
                     <span>Account</span>
                 </a>
 
-                <a href="#"
-                   class="flex items-center space-x-3 p-3 rounded-lg hover:bg-green-600 transition-colors nav-link">
+                <a href="{{ route('admin.system_logs.index') }}"
+                   class="flex items-center space-x-3 p-3 rounded-lg hover:bg-green-600 transition-colors nav-link {{ request()->routeIs('admin.system_logs.*') ? 'active-nav' : '' }}">
                     <i class="fas fa-file-alt w-5"></i>
                     <span>System Logs</span>
                 </a>

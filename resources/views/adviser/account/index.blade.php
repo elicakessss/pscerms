@@ -29,7 +29,7 @@
 
         <!-- Account Details -->
         <div class="md:w-2/3 p-6">
-            <h3 class="text-lg font-semibold text-gray-800 mb-4">Account Information</h3>
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">{{ auth()->user()->first_name }} {{ auth()->user()->last_name }}</h3>
 
             <div class="space-y-4">
                 <!-- Description -->

@@ -10,6 +10,7 @@ use App\Models\Admin;
 use App\Models\Department;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
+use App\Services\SystemLogService;
 
 class UserManagementController extends Controller
 {
@@ -102,7 +103,15 @@ class UserManagementController extends Controller
         // Sort users by name
         $users = $users->sortBy('full_name');
 
-        return view('admin.user_management.index', compact('users', 'userType', 'department', 'search', 'departments'));
+        // Get total counts for summary cards (unfiltered)
+        $totalCounts = [
+            'total_users' => Student::count() + Adviser::count() + Admin::count(),
+            'students' => Student::count(),
+            'advisers' => Adviser::count(),
+            'administrators' => Admin::count(),
+        ];
+
+        return view('admin.user_management.index', compact('users', 'userType', 'department', 'search', 'departments', 'totalCounts'));
     }
 
     public function create()
@@ -146,6 +155,7 @@ class UserManagementController extends Controller
         }
 
         // Create user based on type
+        $user = null;
         switch ($request->user_type) {
             case 'student':
                 // Check if ID number is unique for students
@@ -158,7 +168,7 @@ class UserManagementController extends Controller
                     return back()->withErrors(['email' => 'This email is already taken by another student.'])->withInput();
                 }
 
-                Student::create($validated);
+                $user = Student::create($validated);
                 break;
 
             case 'adviser':
@@ -172,7 +182,7 @@ class UserManagementController extends Controller
                     return back()->withErrors(['email' => 'This email is already taken by another adviser.'])->withInput();
                 }
 
-                Adviser::create($validated);
+                $user = Adviser::create($validated);
                 break;
 
             case 'admin':
@@ -186,8 +196,13 @@ class UserManagementController extends Controller
                     return back()->withErrors(['email' => 'This email is already taken by another admin.'])->withInput();
                 }
 
-                Admin::create($validated);
+                $user = Admin::create($validated);
                 break;
+        }
+
+        // Log the user creation
+        if ($user) {
+            SystemLogService::logCreate($request->user_type, $user, $validated, $request);
         }
 
         return redirect()->route('admin.user_management.index')
@@ -281,6 +296,9 @@ class UserManagementController extends Controller
             $validated['profile_picture'] = $request->file('profile_picture')->store('profile_pictures', 'public');
         }
 
+        // Store old values for logging
+        $oldValues = $user->toArray();
+
         // Update password only if provided
         if (!empty($request->password)) {
             $validated['password'] = Hash::make($request->password);
@@ -289,6 +307,9 @@ class UserManagementController extends Controller
         }
 
         $user->update($validated);
+
+        // Log the user update
+        SystemLogService::logUpdate($type, $user, $oldValues, $validated, $request);
 
         // If admin is editing their own account, redirect to dashboard with a personalized message
         if ($type === 'admin' && $id == auth('admin')->id()) {
@@ -309,12 +330,24 @@ class UserManagementController extends Controller
                            ->with('error', 'User not found.');
         }
 
+        // Prevent admin from deleting their own account
+        if ($type === 'admin' && auth('admin')->check() && auth('admin')->id() == $id) {
+            return redirect()->route('admin.user_management.index')
+                           ->with('error', 'You cannot delete your own account.');
+        }
+
+        // Store user data for logging before deletion
+        $userData = $user->toArray();
+
         // Delete profile picture if exists
         if (isset($user->profile_picture) && $user->profile_picture) {
             \Storage::disk('public')->delete($user->profile_picture);
         }
 
         $user->delete();
+
+        // Log the user deletion
+        SystemLogService::logDelete($type, $user, $userData, $request);
 
         return redirect()->route('admin.user_management.index')
                         ->with('success', 'User deleted successfully!');

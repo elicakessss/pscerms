@@ -14,6 +14,17 @@
                     <i class="fas fa-info-circle mr-1"></i>
                     Self-Evaluation: 10% | Available sections: Domain 2 (partial) + Domain 3 (complete)
                 </p>
+                @if($council->isEvaluationInstanceActive())
+                    <div class="mt-2 inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        <i class="fas fa-edit mr-1"></i>
+                        Draft Mode - Can be edited until finalized
+                    </div>
+                @elseif($council->isEvaluationInstanceFinalized())
+                    <div class="mt-2 inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                        <i class="fas fa-lock mr-1"></i>
+                        Finalized - Cannot be edited
+                    </div>
+                @endif
             </div>
             <div class="text-right">
                 <p class="text-sm text-gray-600">Academic Year: {{ $council->academic_year ?? '2024-2025' }}</p>
@@ -41,8 +52,11 @@
     </div>
 
     <!-- Evaluation Form -->
-    <form action="{{ route('student.evaluation.student_store') }}" method="POST" id="evaluationForm">
+    <form action="{{ isset($evaluation) ? route('student.evaluation.student_update', $evaluation) : route('student.evaluation.student_store') }}" method="POST" id="evaluationForm">
         @csrf
+        @if(isset($evaluation))
+            @method('PUT')
+        @endif
         <input type="hidden" name="council_id" value="{{ $council->id ?? 1 }}">
         <input type="hidden" name="evaluated_student_id" value="{{ auth()->user()->id ?? 1 }}">
         <input type="hidden" name="evaluator_type" value="self">
@@ -71,11 +85,18 @@
 
                                     <div class="space-y-2">
                                         @foreach($question['rating_options'] as $option)
+                                            @php
+                                                $fieldName = 'domain' . ($domainIndex + 1) . '_strand' . ($strandIndex + 1) . '_q' . ($questionIndex + 1);
+                                                $storedValue = isset($existingResponses[$fieldName]) ? trim((string)$existingResponses[$fieldName]) : '';
+                                                $optionValue = trim((string)($option['value'] . '.00'));
+                                                $isChecked = $storedValue !== '' && $storedValue === $optionValue;
+                                            @endphp
                                             <label class="flex items-start space-x-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
                                                 <input type="radio"
                                                        name="domain{{ $domainIndex + 1 }}_strand{{ $strandIndex + 1 }}_q{{ $questionIndex + 1 }}"
                                                        value="{{ $option['value'] }}.00"
                                                        class="mt-1 text-green-600 focus:ring-green-500"
+                                                       {{ $isChecked ? 'checked' : '' }}
                                                        required>
                                                 <div class="flex-1">
                                                     <div class="text-sm font-medium text-gray-900">
@@ -93,22 +114,46 @@
             </div>
         @endforeach
 
+
+
         <!-- Form Actions -->
         <div class="bg-white rounded-lg shadow-sm border p-6">
             <div class="flex items-center justify-between">
                 <div>
-                    <h3 class="text-lg font-semibold text-gray-800">Submit Self-Evaluation</h3>
-                    <p class="text-sm text-gray-600 mt-1">Please review all responses before submitting</p>
+                    <h3 class="text-lg font-semibold text-gray-800">
+                        @if($council->isEvaluationInstanceActive())
+                            {{ isset($evaluation) ? 'Update Draft' : 'Save as Draft' }}
+                        @else
+                            {{ isset($evaluation) ? 'Update Self-Evaluation' : 'Submit Self-Evaluation' }}
+                        @endif
+                    </h3>
+                    <p class="text-sm text-gray-600 mt-1">
+                        @if($council->isEvaluationInstanceActive())
+                            Your responses will be saved as a draft and can be edited until the adviser finalizes the evaluation instance.
+                        @else
+                            Please review all responses before {{ isset($evaluation) ? 'updating' : 'submitting' }}
+                        @endif
+                    </p>
                 </div>
                 <div class="flex space-x-4">
                     <button type="button" onclick="window.history.back()"
                             class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">
                         Cancel
                     </button>
-                    <button type="submit"
-                            class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
-                        Submit Self-Evaluation
-                    </button>
+                    @if($council->isEvaluationInstanceFinalized())
+                        <span class="px-6 py-2 bg-gray-400 text-white rounded-lg cursor-not-allowed">
+                            Evaluation Finalized
+                        </span>
+                    @else
+                        <button type="submit"
+                                class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                            @if($council->isEvaluationInstanceActive())
+                                {{ isset($evaluation) ? 'Update Draft' : 'Save as Draft' }}
+                            @else
+                                {{ isset($evaluation) ? 'Update Self-Evaluation' : 'Submit Self-Evaluation' }}
+                            @endif
+                        </button>
+                    @endif
                 </div>
             </div>
         </div>
@@ -140,7 +185,11 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         // Confirm submission
-        if (confirm('Are you sure you want to submit this self-evaluation? You will not be able to edit it after submission.')) {
+        const isEditing = form.querySelector('input[name="_method"]') !== null;
+        const action = isEditing ? 'update' : 'submit';
+        const message = `Are you sure you want to ${action} this self-evaluation?`;
+
+        if (confirm(message)) {
             form.submit();
         }
     });

@@ -155,10 +155,25 @@
                                         Start Evaluation
                                     </button>
                                 </form>
-                            @elseif($council->hasEvaluations())
+                            @elseif($council->canFinalizeEvaluationInstance())
+                                <form id="finalize-evaluation-form-{{ $council->id }}" action="{{ route('adviser.councils.finalize_evaluations', $council) }}" method="POST" class="flex-1">
+                                    @csrf
+                                    <button type="button"
+                                            onclick="confirmFinalizeEvaluation({{ $council->id }}, '{{ $council->name }}')"
+                                            class="w-full bg-purple-600 hover:bg-purple-700 text-white text-center py-1.5 px-2 rounded text-xs font-medium transition-colors">
+                                        <i class="fas fa-lock mr-1"></i>
+                                        Finalize
+                                    </button>
+                                </form>
+                            @elseif($council->isEvaluationInstanceFinalized())
                                 <span class="flex-1 bg-gray-100 text-gray-600 text-center py-1.5 px-2 rounded text-xs font-medium cursor-not-allowed">
                                     <i class="fas fa-check-circle mr-1"></i>
-                                    Evaluations Started
+                                    Evaluations Finalized
+                                </span>
+                            @elseif($council->hasEvaluations())
+                                <span class="flex-1 bg-gray-100 text-gray-600 text-center py-1.5 px-2 rounded text-xs font-medium cursor-not-allowed">
+                                    <i class="fas fa-clock mr-1"></i>
+                                    Evaluations In Progress
                                 </span>
                             @else
                                 <span class="flex-1 bg-gray-100 text-gray-600 text-center py-1.5 px-2 rounded text-xs font-medium cursor-not-allowed">
@@ -207,10 +222,10 @@
                 <div class="mb-6">
                     <p class="text-gray-700">Are you sure you want to delete the council:</p>
                     <p class="font-semibold text-gray-900 mt-1" id="councilNameToDelete"></p>
-                    <div class="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                        <p class="text-sm text-yellow-800">
-                            <i class="fas fa-info-circle mr-1"></i>
-                            This will permanently delete the council and all its officers. If the council has evaluations, you must clear them first.
+                    <div class="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+                        <p class="text-sm text-red-800">
+                            <i class="fas fa-exclamation-triangle mr-1"></i>
+                            This will permanently delete the council, all its officers, and any associated evaluations and evaluation data. This action cannot be undone.
                         </p>
                     </div>
                 </div>
@@ -268,6 +283,18 @@ function confirmStartEvaluation(councilId, councilName, officerCount) {
             document.getElementById(`start-evaluation-form-${councilId}`).submit();
         },
         'question'
+    );
+}
+
+// Confirm finalize evaluation with modern modal
+function confirmFinalizeEvaluation(councilId, councilName) {
+    showConfirmation(
+        'Finalize Evaluations',
+        `This will finalize all evaluations for ${councilName}. Once finalized, evaluations cannot be edited and final scores will be calculated. This action cannot be undone.`,
+        () => {
+            document.getElementById(`finalize-evaluation-form-${councilId}`).submit();
+        },
+        'warning'
     );
 }
 

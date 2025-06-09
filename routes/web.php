@@ -27,6 +27,7 @@ use App\Http\Controllers\Admin\UserManagementController as AdminUserManagementCo
 use App\Http\Controllers\Admin\CouncilManagementController as AdminCouncilManagementController;
 use App\Http\Controllers\Admin\DepartmentController as AdminDepartmentController;
 use App\Http\Controllers\Admin\EvaluationFormController as AdminEvaluationFormController;
+use App\Http\Controllers\Admin\SystemLogsController as AdminSystemLogsController;
 
 // Home page - redirect to login
 Route::get('/', function () {
@@ -66,6 +67,11 @@ Route::prefix('student')->name('student.')->group(function () {
         Route::get('/evaluation/self/{council}', [StudentEvaluationController::class, 'showSelf'])->name('evaluation.self');
         Route::get('/evaluation/peer/{council}/{evaluatedStudent}', [StudentEvaluationController::class, 'showPeer'])->name('evaluation.peer');
         Route::post('/evaluation', [StudentEvaluationController::class, 'store'])->name('evaluation.student_store');
+
+        // Evaluation editing
+        Route::get('/evaluation/self/{council}/edit', [StudentEvaluationController::class, 'editSelf'])->name('evaluation.self.edit');
+        Route::get('/evaluation/peer/{council}/{evaluatedStudent}/edit', [StudentEvaluationController::class, 'editPeer'])->name('evaluation.peer.edit');
+        Route::put('/evaluation/{evaluation}', [StudentEvaluationController::class, 'update'])->name('evaluation.student_update');
 
         // Leadership Certificate management
         Route::get('/leadership-certificate/create', [StudentDashboardController::class, 'createCertificateRequest'])->name('leadership_certificate.create');
@@ -127,8 +133,13 @@ Route::prefix('adviser')->name('adviser.')->group(function () {
         Route::get('/evaluation/{council}/{student}', [AdviserEvaluationController::class, 'show'])->name('evaluation.show');
         Route::post('/evaluation', [AdviserEvaluationController::class, 'store'])->name('evaluation.adviser_store');
 
+        // Evaluation editing
+        Route::get('/evaluation/{council}/{student}/edit', [AdviserEvaluationController::class, 'edit'])->name('evaluation.edit');
+        Route::put('/evaluation/{evaluation}', [AdviserEvaluationController::class, 'update'])->name('evaluation.adviser_update');
+
         // Evaluation instance management
         Route::post('/councils/{council}/start-evaluations', [AdviserCouncilController::class, 'startEvaluations'])->name('councils.start_evaluations');
+        Route::post('/councils/{council}/finalize-evaluations', [AdviserCouncilController::class, 'finalizeEvaluationInstance'])->name('councils.finalize_evaluations');
         Route::delete('/councils/{council}/clear-evaluations', [AdviserCouncilController::class, 'clearEvaluations'])->name('councils.clear_evaluations');
 
         // Leadership Certificate management
@@ -183,6 +194,13 @@ Route::prefix('admin')->name('admin.')->group(function () {
         ]);
         Route::put('/council_management/academic-year/update', [AdminCouncilManagementController::class, 'updateAcademicYear'])->name('council_management.update_academic_year');
 
+        // System Logs management
+        Route::get('/system-logs', [AdminSystemLogsController::class, 'index'])->name('system_logs.index');
+        Route::get('/system-logs/{systemLog}', [AdminSystemLogsController::class, 'show'])->name('system_logs.show');
+        Route::get('/system-logs/export/csv', [AdminSystemLogsController::class, 'export'])->name('system_logs.export');
+        Route::post('/system-logs/clear-old', [AdminSystemLogsController::class, 'clearOld'])->name('system_logs.clear_old');
+        Route::get('/api/system-logs/activity-stats', [AdminSystemLogsController::class, 'getActivityStats'])->name('system_logs.activity_stats');
+
         // Logout
         Route::post('/logout', function() {
             Auth::guard('admin')->logout();
@@ -192,5 +210,3 @@ Route::prefix('admin')->name('admin.')->group(function () {
         })->name('logout');
     });
 });
-
-

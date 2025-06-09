@@ -63,41 +63,40 @@ class DashboardController extends Controller
     {
         $student = auth()->user();
 
-        // Get all council officers where the student has completed service with their rank information
-        $completedOfficers = $student->councilOfficers()
-            ->with(['council.department'])
+        // Check if student has completed service in any council
+        $hasCompletedService = $student->councilOfficers()
             ->whereNotNull('completed_at')
             ->whereNotNull('final_score')
-            ->get();
+            ->exists();
 
-        // Group by council and include rank information
-        $councilsWithRanks = $completedOfficers->groupBy('council_id')->map(function ($officers) {
-            $council = $officers->first()->council;
-            $studentOfficer = $officers->first(); // Student's officer record
+        if (!$hasCompletedService) {
+            return redirect()->route('student.dashboard')
+                ->with('error', 'You need to complete service in at least one council to request a leadership certificate.');
+        }
 
-            return [
-                'council' => $council,
-                'student_rank' => $studentOfficer->rank,
-                'student_final_score' => $studentOfficer->final_score,
-                'student_position' => $studentOfficer->position_title,
-                'student_self_score' => $studentOfficer->self_score,
-                'student_peer_score' => $studentOfficer->peer_score,
-                'student_adviser_score' => $studentOfficer->adviser_score,
-            ];
-        });
+        // Get latest council terms for each type
+        $latestUniwideOfficer = $student->getLatestUniwideCouncilOfficer();
+        $latestDepartmentalOfficer = $student->getLatestDepartmentalCouncilOfficer();
 
-        // Separate UNIWIDE (campus) and departmental councils
-        $campusCouncils = $councilsWithRanks->filter(function ($item) {
-            return $item['council']->department->abbreviation === 'UNIWIDE';
-        });
+        // Determine available certificate types
+        $canRequestCampus = $latestUniwideOfficer !== null;
+        $canRequestDepartmental = $latestDepartmentalOfficer !== null;
 
-        $departmentalCouncils = $councilsWithRanks->filter(function ($item) {
-            return $item['council']->department->abbreviation !== 'UNIWIDE';
-        });
+        // If student has no completed service, redirect
+        if (!$canRequestCampus && !$canRequestDepartmental) {
+            return redirect()->route('student.dashboard')
+                ->with('error', 'You need to complete service in at least one council to request a leadership certificate.');
+        }
+
+        // Ensure we pass null if the officer doesn't exist
+        $latestUniwideOfficer = $canRequestCampus ? $latestUniwideOfficer : null;
+        $latestDepartmentalOfficer = $canRequestDepartmental ? $latestDepartmentalOfficer : null;
 
         return view('student.leadership_certificate.create', compact(
-            'campusCouncils',
-            'departmentalCouncils'
+            'latestUniwideOfficer',
+            'latestDepartmentalOfficer',
+            'canRequestCampus',
+            'canRequestDepartmental'
         ));
     }
 
@@ -110,34 +109,37 @@ class DashboardController extends Controller
 
         $validated = $request->validate([
             'certificate_type' => 'required|in:campus,departmental',
-            'council_id' => 'required|exists:councils,id',
             'is_graduating' => 'required|boolean',
         ]);
 
-        // Verify that the student actually served in the selected council
-        $councilOfficer = $student->councilOfficers()
-            ->where('council_id', $validated['council_id'])
-            ->whereNotNull('completed_at')
-            ->whereNotNull('final_score')
-            ->first();
-
-        if (!$councilOfficer) {
-            return back()->withErrors(['council_id' => 'You did not complete service in the selected council.']);
+        // Determine the council based on certificate type and latest term served
+        if ($validated['certificate_type'] === 'campus') {
+            $councilOfficer = $student->getLatestUniwideCouncilOfficer();
+            if (!$councilOfficer) {
+                return back()->withErrors(['certificate_type' => 'You have not completed service in any UNIWIDE council.']);
+            }
+        } else {
+            $councilOfficer = $student->getLatestDepartmentalCouncilOfficer();
+            if (!$councilOfficer) {
+                return back()->withErrors(['certificate_type' => 'You have not completed service in any departmental council.']);
+            }
         }
 
-        // Check if request already exists for this council
+        $councilId = $councilOfficer->council_id;
+
+        // Check if request already exists for this certificate type
         $existingRequest = LeadershipCertificateRequest::where('student_id', $student->id)
-            ->where('council_id', $validated['council_id'])
+            ->where('certificate_type', $validated['certificate_type'])
             ->first();
 
         if ($existingRequest) {
-            return back()->withErrors(['council_id' => 'You have already requested a certificate for this council.']);
+            return back()->withErrors(['certificate_type' => 'You have already requested a ' . $validated['certificate_type'] . ' leadership certificate.']);
         }
 
         // Create the request
         LeadershipCertificateRequest::create([
             'student_id' => $student->id,
-            'council_id' => $validated['council_id'],
+            'council_id' => $councilId,
             'certificate_type' => $validated['certificate_type'],
             'is_graduating' => $validated['is_graduating'],
             'status' => 'pending',
@@ -156,6 +158,7 @@ class DashboardController extends Controller
 
         $requests = LeadershipCertificateRequest::where('student_id', $student->id)
             ->with(['council.department', 'council.adviser'])
+            ->whereHas('council') // Only include requests where council still exists
             ->orderBy('requested_at', 'desc')
             ->get();
 

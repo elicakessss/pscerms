@@ -154,10 +154,11 @@ class StudentManagementController extends Controller
         }
 
         $validated = $request->validate([
+            'id_number' => 'required|string|max:255|unique:students,id_number,' . $student->id,
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
             'email' => 'required|email|max:255|unique:students,email,' . $student->id,
-            'password' => 'nullable|string|min:6',
+            'password' => 'nullable|digits:6',
             'profile_picture' => 'nullable|image|max:2048',
             'description' => 'nullable|string',
         ]);

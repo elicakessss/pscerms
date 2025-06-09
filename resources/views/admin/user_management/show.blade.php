@@ -4,6 +4,22 @@
 @section('page-title', 'User Details')
 
 @section('content')
+<!-- Current User Notice -->
+@if($type === 'admin' && auth('admin')->check() && auth('admin')->id() == $user->id)
+<div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+    <div class="flex items-center">
+        <div class="flex-shrink-0">
+            <i class="fas fa-info-circle text-green-600"></i>
+        </div>
+        <div class="ml-3">
+            <p class="text-sm text-green-800">
+                <strong>This is your account.</strong> You are currently viewing your own profile information.
+            </p>
+        </div>
+    </div>
+</div>
+@endif
+
 <div class="flex justify-between items-center mb-6">
     <h1 class="text-2xl font-bold text-gray-800">User Details</h1>
     <div class="flex space-x-3">
@@ -13,7 +29,7 @@
     </div>
 </div>
 
-<div class="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200">
+<div class="bg-white rounded-lg shadow-sm overflow-hidden border {{ ($type === 'admin' && auth('admin')->check() && auth('admin')->id() == $user->id) ? 'border-green-300 ring-2 ring-green-100' : 'border-gray-200' }}">
     <div class="md:flex">
         <!-- Profile Picture and Basic Info -->
         <div class="md:w-1/3 bg-gray-50 p-6 border-b md:border-b-0 md:border-r border-gray-200">
@@ -26,7 +42,15 @@
                 </div>
                 @endif
 
-                <h2 class="text-xl font-bold text-gray-800">{{ $user->full_name }}</h2>
+                <div class="flex items-center justify-center space-x-2 mb-2">
+                    <h2 class="text-xl font-bold text-gray-800">{{ $user->full_name }}</h2>
+                    @if($type === 'admin' && auth('admin')->check() && auth('admin')->id() == $user->id)
+                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200">
+                            <i class="fas fa-user-check mr-1"></i>
+                            Me
+                        </span>
+                    @endif
+                </div>
                 <p class="text-gray-600 mb-2">{{ $user->id_number }}</p>
                 <p class="text-gray-600 mb-4">{{ $user->email }}</p>
 
@@ -79,6 +103,7 @@
                         <a href="mailto:{{ $user->email }}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm">
                             <i class="fas fa-envelope mr-2"></i> Send Email
                         </a>
+                        @unless($type === 'admin' && auth('admin')->check() && auth('admin')->id() == $user->id)
                         <form action="{{ route('admin.user_management.destroy', [$type, $user->id]) }}" method="POST" class="inline" onsubmit="return confirm('Are you sure you want to delete this user? This action cannot be undone.');">
                             @csrf
                             @method('DELETE')
@@ -86,6 +111,11 @@
                                 <i class="fas fa-trash mr-2"></i> Delete User
                             </button>
                         </form>
+                        @else
+                        <div class="bg-gray-100 text-gray-500 px-4 py-2 rounded-lg text-sm cursor-not-allowed">
+                            <i class="fas fa-shield-alt mr-2"></i> Cannot Delete Own Account
+                        </div>
+                        @endunless
                     </div>
                 </div>
             </div>
@@ -133,7 +163,7 @@
                             </div>
                             @if($councilOfficer->rank)
                                 <div class="flex justify-between items-center">
-                                    <span class="text-xs text-gray-500">Rank:</span>
+                                    <span class="text-xs text-gray-500">Award:</span>
                                     <div class="flex items-center">
                                         @php
                                             $rankingCategory = $councilOfficer->ranking_category;
@@ -141,15 +171,40 @@
                                                 'Gold' => 'text-yellow-500',
                                                 'Silver' => 'text-gray-500',
                                                 'Bronze' => 'text-orange-600',
+                                                'Certificate' => 'text-blue-500',
                                                 default => 'text-gray-400'
                                             };
                                         @endphp
                                         <i class="fas fa-gem {{ $gemColor }} mr-1"></i>
-                                        <span class="text-sm font-semibold text-gray-800">#{{ $councilOfficer->rank }}</span>
+                                        <span class="text-sm font-semibold text-gray-800">{{ $rankingCategory }}</span>
                                     </div>
                                 </div>
                             @endif
                         </div>
+
+                        <!-- Recommendations (Admin Only) -->
+                        @if($councilOfficer->final_score)
+                            @php
+                                $scoreService = app(\App\Services\ScoreCalculationService::class);
+                                $recommendations = $scoreService->getRecommendationText($councilOfficer->final_score);
+                            @endphp
+                            <div class="mb-3">
+                                <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                                    <h5 class="text-xs font-medium text-blue-800 mb-2 flex items-center">
+                                        <i class="fas fa-lightbulb mr-1"></i>
+                                        Recommendations
+                                    </h5>
+                                    <ul class="space-y-1">
+                                        @foreach($recommendations as $recommendation)
+                                            <li class="text-xs text-blue-700 flex items-start">
+                                                <i class="fas fa-circle text-blue-400 text-xs mt-1 mr-2 flex-shrink-0" style="font-size: 4px;"></i>
+                                                <span>{{ $recommendation }}</span>
+                                            </li>
+                                        @endforeach
+                                    </ul>
+                                </div>
+                            </div>
+                        @endif
 
                         <!-- Completion Date -->
                         <div class="pt-2 border-t border-gray-200">

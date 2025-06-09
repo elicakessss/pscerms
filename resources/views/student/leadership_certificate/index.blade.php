@@ -37,74 +37,111 @@
     <!-- Requests Grid -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         @foreach($requests as $request)
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-300">
-                <div class="p-6">
-                    <!-- Header with Icon and Status -->
-                    <div class="flex items-start justify-between mb-4">
-                        <div class="flex items-start">
-                            <div class="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center mr-4 flex-shrink-0">
-                                <i class="fas fa-certificate text-yellow-600 text-lg"></i>
+            @if($request->council)
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-300">
+                    <div class="p-6">
+                        <!-- Header with Icon and Status -->
+                        <div class="flex items-start justify-between mb-4">
+                            <div class="flex items-start">
+                                <div class="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center mr-4 flex-shrink-0">
+                                    <i class="fas fa-certificate text-yellow-600 text-lg"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <h3 class="text-lg font-semibold text-gray-900 mb-1">{{ ucfirst($request->certificate_type) }} Leadership Award</h3>
+                                    <p class="text-sm text-gray-500">{{ $request->council->academic_year ?? 'N/A' }}</p>
+                                </div>
                             </div>
-                            <div class="flex-1">
-                                <h3 class="text-lg font-semibold text-gray-900 mb-1">{{ ucfirst($request->certificate_type) }} Leadership Award</h3>
-                                <p class="text-sm text-gray-500">{{ $request->council->academic_year }}</p>
+                            <!-- Status Badge -->
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium
+                                @if($request->status === 'pending') bg-yellow-100 text-yellow-800
+                                @elseif($request->status === 'approved') bg-green-100 text-green-800
+                                @else bg-red-100 text-red-800 @endif">
+                                {{ ucfirst($request->status) }}
+                            </span>
+                        </div>
+
+                        <!-- Request Information -->
+                        <div class="space-y-3 mb-4">
+                            <div class="flex items-center text-sm text-gray-600">
+                                <i class="fas fa-users text-gray-400 mr-3 w-4"></i>
+                                <span class="font-medium">Council:</span>
+                                <span class="ml-2 truncate">{{ $request->council->name ?? 'N/A' }}</span>
                             </div>
-                        </div>
-                        <!-- Status Badge -->
-                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium
-                            @if($request->status === 'pending') bg-yellow-100 text-yellow-800
-                            @elseif($request->status === 'approved') bg-green-100 text-green-800
-                            @else bg-red-100 text-red-800 @endif">
-                            {{ ucfirst($request->status) }}
-                        </span>
-                    </div>
 
-                    <!-- Request Information -->
-                    <div class="space-y-3 mb-4">
-                        <div class="flex items-center text-sm text-gray-600">
-                            <i class="fas fa-users text-gray-400 mr-3 w-4"></i>
-                            <span class="font-medium">Council:</span>
-                            <span class="ml-2 truncate">{{ $request->council->name }}</span>
+                            <div class="flex items-center text-sm text-gray-600">
+                                <i class="fas fa-chalkboard-teacher text-gray-400 mr-3 w-4"></i>
+                                <span class="font-medium">Adviser:</span>
+                                <span class="ml-2">{{ $request->council->adviser ? $request->council->adviser->first_name . ' ' . $request->council->adviser->last_name : 'N/A' }}</span>
+                            </div>
+
+                            @if($request->is_graduating)
+                                <div class="flex items-center text-sm text-green-600">
+                                    <i class="fas fa-graduation-cap text-green-500 mr-3 w-4"></i>
+                                    <span class="font-medium">Graduating Student</span>
+                                </div>
+                            @endif
+                        </div>
+            @else
+                <!-- Handle requests with missing council data -->
+                <div class="bg-white rounded-lg shadow-sm border border-red-200 hover:shadow-md transition-shadow duration-300">
+                    <div class="p-6">
+                        <!-- Header with Icon and Status -->
+                        <div class="flex items-start justify-between mb-4">
+                            <div class="flex items-start">
+                                <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mr-4 flex-shrink-0">
+                                    <i class="fas fa-exclamation-triangle text-red-600 text-lg"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <h3 class="text-lg font-semibold text-gray-900 mb-1">{{ ucfirst($request->certificate_type) }} Leadership Award</h3>
+                                    <p class="text-sm text-red-500">Council data unavailable</p>
+                                </div>
+                            </div>
+                            <!-- Status Badge -->
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                Data Error
+                            </span>
                         </div>
 
-                        <div class="flex items-center text-sm text-gray-600">
-                            <i class="fas fa-chalkboard-teacher text-gray-400 mr-3 w-4"></i>
-                            <span class="font-medium">Adviser:</span>
-                            <span class="ml-2">{{ $request->council->adviser->first_name }} {{ $request->council->adviser->last_name }}</span>
+                        <!-- Request Information -->
+                        <div class="space-y-3 mb-4">
+                            <div class="flex items-center text-sm text-red-600">
+                                <i class="fas fa-exclamation-circle text-red-400 mr-3 w-4"></i>
+                                <span class="font-medium">Council data is missing or has been deleted.</span>
+                            </div>
+
+                            @if($request->is_graduating)
+                                <div class="flex items-center text-sm text-green-600">
+                                    <i class="fas fa-graduation-cap text-green-500 mr-3 w-4"></i>
+                                    <span class="font-medium">Graduating Student</span>
+                                </div>
+                            @endif
                         </div>
 
-                        @if($request->is_graduating)
-                            <div class="flex items-center text-sm text-green-600">
-                                <i class="fas fa-graduation-cap text-green-500 mr-3 w-4"></i>
-                                <span class="font-medium">Graduating Student</span>
+                        <!-- Request Status -->
+                        <div class="flex items-center text-sm text-gray-500 mb-4">
+                            <i class="fas fa-calendar mr-2"></i>
+                            <span>Requested: {{ $request->requested_at->format('M j, Y') }}</span>
+                        </div>
+
+                        @if($request->responded_at)
+                            <div class="flex items-center text-sm text-gray-500 mb-4">
+                                <i class="fas fa-calendar-check mr-2"></i>
+                                <span>Responded: {{ $request->responded_at->format('M j, Y') }}</span>
+                            </div>
+                        @endif
+
+                        @if($request->adviser_response && $request->status !== 'pending')
+                            <!-- Adviser Response -->
+                            <div class="pt-4 border-t border-gray-100">
+                                <h4 class="text-sm font-medium text-gray-700 mb-2">Adviser Response:</h4>
+                                <p class="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
+                                    {{ $request->adviser_response }}
+                                </p>
                             </div>
                         @endif
                     </div>
-
-                    <!-- Request Status -->
-                    <div class="flex items-center text-sm text-gray-500 mb-4">
-                        <i class="fas fa-calendar mr-2"></i>
-                        <span>Requested: {{ $request->requested_at->format('M j, Y') }}</span>
-                    </div>
-
-                    @if($request->responded_at)
-                        <div class="flex items-center text-sm text-gray-500 mb-4">
-                            <i class="fas fa-calendar-check mr-2"></i>
-                            <span>Responded: {{ $request->responded_at->format('M j, Y') }}</span>
-                        </div>
-                    @endif
-
-                    @if($request->adviser_response && $request->status !== 'pending')
-                        <!-- Adviser Response -->
-                        <div class="pt-4 border-t border-gray-100">
-                            <h4 class="text-sm font-medium text-gray-700 mb-2">Adviser Response:</h4>
-                            <p class="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
-                                {{ $request->adviser_response }}
-                            </p>
-                        </div>
-                    @endif
                 </div>
-            </div>
+            @endif
         @endforeach
     </div>
 @endif

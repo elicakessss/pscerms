@@ -3,6 +3,8 @@
 @section('title', 'Create User - PSCERMS')
 @section('page-title', 'Create New User')
 
+
+
 @section('content')
 <div class="max-w-4xl mx-auto">
     <div class="bg-white rounded-lg shadow">
@@ -29,11 +31,11 @@
                     <label class="relative">
                         <input type="radio" name="user_type" value="student" class="sr-only peer"
                                {{ old('user_type') === 'student' ? 'checked' : '' }} required>
-                        <div class="p-4 border-2 border-gray-200 rounded-lg cursor-pointer peer-checked:border-green-500 peer-checked:bg-green-50 hover:border-gray-300 transition-colors">
+                        <div class="user-type-card p-4 border-2 border-gray-200 rounded-lg cursor-pointer peer-checked:border-green-500 peer-checked:bg-green-50 peer-checked:shadow-lg peer-checked:scale-105 hover:border-gray-300 hover:shadow-md transition-all duration-200 ease-in-out">
                             <div class="text-center">
-                                <i class="fas fa-user-graduate text-2xl text-blue-600 mb-2"></i>
-                                <h4 class="font-medium text-gray-900">Student</h4>
-                                <p class="text-sm text-gray-500">Regular student account</p>
+                                <i class="fas fa-user-graduate text-2xl text-blue-600 mb-2 transition-colors duration-200"></i>
+                                <h4 class="font-medium text-gray-900 transition-colors duration-200">Student</h4>
+                                <p class="text-sm text-gray-500 transition-colors duration-200">Regular student account</p>
                             </div>
                         </div>
                     </label>
@@ -41,11 +43,11 @@
                     <label class="relative">
                         <input type="radio" name="user_type" value="adviser" class="sr-only peer"
                                {{ old('user_type') === 'adviser' ? 'checked' : '' }} required>
-                        <div class="p-4 border-2 border-gray-200 rounded-lg cursor-pointer peer-checked:border-green-500 peer-checked:bg-green-50 hover:border-gray-300 transition-colors">
+                        <div class="user-type-card p-4 border-2 border-gray-200 rounded-lg cursor-pointer peer-checked:border-green-500 peer-checked:bg-green-50 peer-checked:shadow-lg peer-checked:scale-105 hover:border-gray-300 hover:shadow-md transition-all duration-200 ease-in-out">
                             <div class="text-center">
-                                <i class="fas fa-chalkboard-teacher text-2xl text-purple-600 mb-2"></i>
-                                <h4 class="font-medium text-gray-900">Adviser</h4>
-                                <p class="text-sm text-gray-500">Faculty adviser account</p>
+                                <i class="fas fa-chalkboard-teacher text-2xl text-purple-600 mb-2 transition-colors duration-200"></i>
+                                <h4 class="font-medium text-gray-900 transition-colors duration-200">Adviser</h4>
+                                <p class="text-sm text-gray-500 transition-colors duration-200">Faculty adviser account</p>
                             </div>
                         </div>
                     </label>
@@ -53,11 +55,11 @@
                     <label class="relative">
                         <input type="radio" name="user_type" value="admin" class="sr-only peer"
                                {{ old('user_type') === 'admin' ? 'checked' : '' }} required>
-                        <div class="p-4 border-2 border-gray-200 rounded-lg cursor-pointer peer-checked:border-green-500 peer-checked:bg-green-50 hover:border-gray-300 transition-colors">
+                        <div class="user-type-card p-4 border-2 border-gray-200 rounded-lg cursor-pointer peer-checked:border-green-500 peer-checked:bg-green-50 peer-checked:shadow-lg peer-checked:scale-105 hover:border-gray-300 hover:shadow-md transition-all duration-200 ease-in-out">
                             <div class="text-center">
-                                <i class="fas fa-user-shield text-2xl text-red-600 mb-2"></i>
-                                <h4 class="font-medium text-gray-900">Administrator</h4>
-                                <p class="text-sm text-gray-500">Admin account</p>
+                                <i class="fas fa-user-shield text-2xl text-red-600 mb-2 transition-colors duration-200"></i>
+                                <h4 class="font-medium text-gray-900 transition-colors duration-200">Administrator</h4>
+                                <p class="text-sm text-gray-500 transition-colors duration-200">Admin account</p>
                             </div>
                         </div>
                     </label>
@@ -220,6 +222,24 @@
     </div>
 </div>
 
+<style>
+    .user-type-card.card-selected {
+        transform: scale(1.05) !important;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15) !important;
+        border-color: #10b981 !important;
+        background-color: #f0fdf4 !important;
+    }
+
+    .user-type-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .user-type-card.card-selected:hover {
+        transform: scale(1.05) translateY(-2px) !important;
+    }
+</style>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const userTypeInputs = document.querySelectorAll('input[name="user_type"]');
@@ -251,11 +271,63 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     userTypeInputs.forEach(input => {
-        input.addEventListener('change', toggleFields);
+        input.addEventListener('change', function() {
+            toggleFields();
+            updateCardHighlighting();
+        });
     });
+
+    function updateCardHighlighting() {
+        // Remove highlighting from all cards
+        document.querySelectorAll('.user-type-card').forEach(card => {
+            card.classList.remove('card-selected');
+            const icon = card.querySelector('i');
+            const title = card.querySelector('h4');
+            const description = card.querySelector('p');
+
+            // Reset to original colors
+            icon.classList.remove('text-green-600');
+            title.classList.remove('text-green-800');
+            description.classList.remove('text-green-600');
+
+            // Restore original colors
+            if (icon.classList.contains('fa-user-graduate')) {
+                icon.classList.add('text-blue-600');
+            } else if (icon.classList.contains('fa-chalkboard-teacher')) {
+                icon.classList.add('text-purple-600');
+            } else if (icon.classList.contains('fa-user-shield')) {
+                icon.classList.add('text-red-600');
+            }
+
+            title.classList.add('text-gray-900');
+            description.classList.add('text-gray-500');
+        });
+
+        // Highlight the selected card
+        const selectedInput = document.querySelector('input[name="user_type"]:checked');
+        if (selectedInput) {
+            const selectedCard = selectedInput.nextElementSibling;
+            const icon = selectedCard.querySelector('i');
+            const title = selectedCard.querySelector('h4');
+            const description = selectedCard.querySelector('p');
+
+            selectedCard.classList.add('card-selected');
+
+            // Remove original colors and add green colors
+            icon.classList.remove('text-blue-600', 'text-purple-600', 'text-red-600');
+            icon.classList.add('text-green-600');
+
+            title.classList.remove('text-gray-900');
+            title.classList.add('text-green-800');
+
+            description.classList.remove('text-gray-500');
+            description.classList.add('text-green-600');
+        }
+    }
 
     // Initial toggle based on any pre-selected value
     toggleFields();
+    updateCardHighlighting();
 
     // Profile picture preview
     const profilePictureInput = document.getElementById('profile_picture');

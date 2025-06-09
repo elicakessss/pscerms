@@ -67,4 +67,59 @@ class Evaluation extends Model
     {
         return $this->hasMany(EvaluationForm::class);
     }
+
+    /**
+     * Check if this evaluation can be edited
+     */
+    public function canBeEdited()
+    {
+        return $this->status === 'completed' && $this->council->isEvaluationInstanceActive();
+    }
+
+    /**
+     * Check if this evaluation is in draft mode (can be edited)
+     */
+    public function isDraft()
+    {
+        return $this->council->isEvaluationInstanceActive();
+    }
+
+    /**
+     * Check if this evaluation is finalized (cannot be edited)
+     */
+    public function isFinalized()
+    {
+        return $this->council->isEvaluationInstanceFinalized();
+    }
+
+    /**
+     * Get existing responses formatted for form pre-population
+     */
+    public function getFormattedResponses()
+    {
+        $responses = [];
+        foreach ($this->evaluationForms as $form) {
+            // The section_name contains the field name (e.g., domain1_strand1_q1, length_of_service)
+            $responses[$form->section_name] = $form->answer;
+        }
+        return $responses;
+    }
+
+    /**
+     * Get status badge class for display
+     */
+    public function getStatusBadgeClass()
+    {
+        return $this->status === 'completed'
+            ? 'bg-green-100 text-green-800'
+            : 'bg-yellow-100 text-yellow-800';
+    }
+
+    /**
+     * Get status display text
+     */
+    public function getStatusDisplayText()
+    {
+        return $this->status === 'completed' ? 'Completed' : 'Pending';
+    }
 }

@@ -16,6 +16,9 @@ return new class extends Migration
             $table->string('name');
             $table->string('academic_year');
             $table->enum('status', ['active', 'completed'])->default('active');
+            $table->enum('evaluation_instance_status', ['not_started', 'active', 'finalized'])->default('not_started');
+            $table->timestamp('evaluation_instance_started_at')->nullable();
+            $table->timestamp('evaluation_instance_finalized_at')->nullable();
             $table->foreignId('adviser_id')->constrained('advisers');
             $table->foreignId('department_id')->constrained();
             $table->timestamps();

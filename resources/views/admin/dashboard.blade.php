@@ -103,10 +103,10 @@
                     <p class="text-xs text-gray-500">View logs and system events</p>
                 </div>
 
-                <button class="w-full bg-green-600 hover:bg-green-700 text-white text-center py-2 px-4 rounded-lg text-sm font-medium transition-colors">
+                <a href="{{ route('admin.system_logs.index') }}" class="w-full bg-green-600 hover:bg-green-700 text-white text-center py-2 px-4 rounded-lg text-sm font-medium transition-colors block">
                     <i class="fas fa-eye mr-2"></i>
                     View Logs
-                </button>
+                </a>
             </div>
         </div>
     </div>

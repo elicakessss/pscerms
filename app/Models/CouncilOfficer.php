@@ -74,8 +74,10 @@ class CouncilOfficer extends Model
             return 'Silver';
         } elseif ($this->final_score >= 1.21) {
             return 'Bronze';
+        } elseif ($this->final_score >= 0.61) {
+            return 'Certificate';
         } else {
-            return 'Needs Improvement';
+            return 'No Award';
         }
     }
 

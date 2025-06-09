@@ -41,7 +41,7 @@
             </div>
             <div class="ml-4">
                 <p class="text-sm font-medium text-gray-500">Total Users</p>
-                <p class="text-2xl font-semibold text-gray-900">{{ $users->count() }}</p>
+                <p class="text-2xl font-semibold text-gray-900">{{ $totalCounts['total_users'] }}</p>
             </div>
         </div>
     </div>
@@ -56,7 +56,7 @@
             </div>
             <div class="ml-4">
                 <p class="text-sm font-medium text-gray-500">Students</p>
-                <p class="text-2xl font-semibold text-gray-900">{{ $users->where('user_type', 'Student')->count() }}</p>
+                <p class="text-2xl font-semibold text-gray-900">{{ $totalCounts['students'] }}</p>
             </div>
         </div>
     </div>
@@ -71,7 +71,7 @@
             </div>
             <div class="ml-4">
                 <p class="text-sm font-medium text-gray-500">Advisers</p>
-                <p class="text-2xl font-semibold text-gray-900">{{ $users->where('user_type', 'Adviser')->count() }}</p>
+                <p class="text-2xl font-semibold text-gray-900">{{ $totalCounts['advisers'] }}</p>
             </div>
         </div>
     </div>
@@ -86,7 +86,7 @@
             </div>
             <div class="ml-4">
                 <p class="text-sm font-medium text-gray-500">Administrators</p>
-                <p class="text-2xl font-semibold text-gray-900">{{ $users->where('user_type', 'Administrator')->count() }}</p>
+                <p class="text-2xl font-semibold text-gray-900">{{ $totalCounts['administrators'] }}</p>
             </div>
         </div>
     </div>
@@ -106,22 +106,22 @@
             <a href="{{ request()->fullUrlWithQuery(['type' => 'all']) }}"
                class="py-4 px-6 text-sm font-medium border-b-2 transition-colors {{ $userType === 'all' ? 'border-green-500 text-green-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
                 <i class="fas fa-users mr-2"></i>
-                All Users ({{ $users->count() }})
+                All Users
             </a>
             <a href="{{ request()->fullUrlWithQuery(['type' => 'students']) }}"
                class="py-4 px-6 text-sm font-medium border-b-2 transition-colors {{ $userType === 'students' ? 'border-green-500 text-green-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
                 <i class="fas fa-graduation-cap mr-2"></i>
-                Students ({{ $users->where('user_type', 'Student')->count() }})
+                Students
             </a>
             <a href="{{ request()->fullUrlWithQuery(['type' => 'advisers']) }}"
                class="py-4 px-6 text-sm font-medium border-b-2 transition-colors {{ $userType === 'advisers' ? 'border-green-500 text-green-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
                 <i class="fas fa-chalkboard-teacher mr-2"></i>
-                Advisers ({{ $users->where('user_type', 'Adviser')->count() }})
+                Advisers
             </a>
             <a href="{{ request()->fullUrlWithQuery(['type' => 'admins']) }}"
                class="py-4 px-6 text-sm font-medium border-b-2 transition-colors {{ $userType === 'admins' ? 'border-green-500 text-green-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
                 <i class="fas fa-user-shield mr-2"></i>
-                Administrators ({{ $users->where('user_type', 'Administrator')->count() }})
+                Administrators
             </a>
             @if($userType !== 'admins')
             <div class="ml-auto flex items-center px-6">
@@ -160,7 +160,7 @@
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
                 @forelse($users as $user)
-                    <tr class="hover:bg-gray-50">
+                    <tr class="hover:bg-gray-50 {{ ($user->user_type === 'Administrator' && auth('admin')->check() && auth('admin')->id() == $user->id) ? 'bg-green-50 border-l-4 border-green-400' : '' }}">
                         <td class="px-6 py-4 whitespace-nowrap">
                             <div class="flex items-center">
                                 <div class="flex-shrink-0 h-10 w-10">
@@ -175,7 +175,15 @@
                                     @endif
                                 </div>
                                 <div class="ml-4">
-                                    <div class="text-sm font-medium text-gray-900">{{ $user->full_name }}</div>
+                                    <div class="flex items-center space-x-2">
+                                        <div class="text-sm font-medium text-gray-900">{{ $user->full_name }}</div>
+                                        @if($user->user_type === 'Administrator' && auth('admin')->check() && auth('admin')->id() == $user->id)
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200">
+                                                <i class="fas fa-user-check mr-1"></i>
+                                                Me
+                                            </span>
+                                        @endif
+                                    </div>
                                     <div class="text-sm text-gray-500">{{ $user->email }}</div>
                                 </div>
                             </div>
@@ -209,6 +217,7 @@
                             </a>
 
                             <!-- Delete Button -->
+                            @unless($user->user_type === 'Administrator' && auth('admin')->check() && auth('admin')->id() == $user->id)
                             <form method="POST"
                                   action="{{ route('admin.user_management.destroy', [strtolower(str_replace('Administrator', 'admin', $user->user_type)), $user->id]) }}"
                                   class="inline"
@@ -221,6 +230,12 @@
                                     Delete
                                 </button>
                             </form>
+                            @else
+                            <span class="inline-flex items-center px-3 py-1.5 bg-gray-300 text-gray-500 text-xs rounded cursor-not-allowed">
+                                <i class="fas fa-shield-alt mr-1"></i>
+                                Protected
+                            </span>
+                            @endunless
                         </td>
                     </tr>
                 @empty

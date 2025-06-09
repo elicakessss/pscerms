@@ -29,7 +29,7 @@
 
         <!-- Account Details -->
         <div class="md:w-2/3 p-6">
-            <h3 class="text-lg font-semibold text-gray-800 mb-4">Account Information</h3>
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">{{ auth()->user()->first_name }} {{ auth()->user()->last_name }}</h3>
 
             <div class="space-y-4">
                 <!-- Description -->
@@ -100,7 +100,7 @@
                             </div>
                             @if($councilOfficer->rank)
                                 <div class="flex justify-between items-center">
-                                    <span class="text-xs text-gray-500">Rank:</span>
+                                    <span class="text-xs text-gray-500">Award:</span>
                                     <div class="flex items-center">
                                         @php
                                             $rankingCategory = $councilOfficer->ranking_category;
@@ -108,11 +108,12 @@
                                                 'Gold' => 'text-yellow-500',
                                                 'Silver' => 'text-gray-500',
                                                 'Bronze' => 'text-orange-600',
+                                                'Certificate' => 'text-blue-500',
                                                 default => 'text-gray-400'
                                             };
                                         @endphp
                                         <i class="fas fa-gem {{ $gemColor }} mr-1"></i>
-                                        <span class="text-sm font-semibold text-gray-800">#{{ $councilOfficer->rank }}</span>
+                                        <span class="text-sm font-semibold text-gray-800">{{ $rankingCategory }}</span>
                                     </div>
                                 </div>
                             @endif

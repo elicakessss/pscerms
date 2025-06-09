@@ -7,8 +7,8 @@ use Illuminate\Http\Request;
 use App\Models\Council;
 use App\Models\Department;
 use App\Models\Adviser;
-use App\Models\Student;
 use Illuminate\Support\Facades\DB;
+use App\Rules\UniqueCouncilPerDepartmentYear;
 
 class CouncilManagementController extends Controller
 {
@@ -95,7 +95,8 @@ class CouncilManagementController extends Controller
                     if ($endYear !== $startYear + 1) {
                         $fail('The academic year must be consecutive years (e.g., 2024-2025).');
                     }
-                }
+                },
+                new UniqueCouncilPerDepartmentYear($request->department_id)
             ],
             'status' => 'required|in:active,completed',
             'adviser_id' => 'required|exists:advisers,id',
@@ -106,17 +107,6 @@ class CouncilManagementController extends Controller
         $adviser = Adviser::find($validated['adviser_id']);
         if ($adviser->department_id != $validated['department_id']) {
             return back()->withErrors(['adviser_id' => 'The selected adviser must belong to the selected department.'])->withInput();
-        }
-
-        // Check if department already has a council for this academic year
-        $existingCouncil = Council::where('department_id', $validated['department_id'])
-            ->where('academic_year', $validated['academic_year'])
-            ->first();
-
-        if ($existingCouncil) {
-            return back()->withErrors([
-                'academic_year' => 'This department already has a council for the selected academic year.'
-            ])->withInput();
         }
 
         // Ensure the name follows the correct format
@@ -165,7 +155,8 @@ class CouncilManagementController extends Controller
                     if ($endYear !== $startYear + 1) {
                         $fail('The academic year must be consecutive years (e.g., 2024-2025).');
                     }
-                }
+                },
+                new UniqueCouncilPerDepartmentYear($request->department_id, $council->id)
             ],
             'status' => 'required|in:active,completed',
             'adviser_id' => 'required|exists:advisers,id',
@@ -176,18 +167,6 @@ class CouncilManagementController extends Controller
         $adviser = Adviser::find($validated['adviser_id']);
         if ($adviser->department_id != $validated['department_id']) {
             return back()->withErrors(['adviser_id' => 'The selected adviser must belong to the selected department.'])->withInput();
-        }
-
-        // Check if another council exists for this department and academic year (excluding current council)
-        $existingCouncil = Council::where('department_id', $validated['department_id'])
-            ->where('academic_year', $validated['academic_year'])
-            ->where('id', '!=', $council->id)
-            ->first();
-
-        if ($existingCouncil) {
-            return back()->withErrors([
-                'academic_year' => 'This department already has another council for the selected academic year.'
-            ])->withInput();
         }
 
         // Ensure the name follows the correct format

@@ -212,7 +212,7 @@ class ScoreCalculationService
 
     /**
      * Get ranking category based on final score
-     * Gold: 2.41-3.00, Silver: 1.81-2.40, Bronze: 1.21-1.80, No Award: Below 1.21
+     * Gold: 2.41-3.00, Silver: 1.81-2.40, Bronze: 1.21-1.80, Certificate: 0.61-1.20, No Award: Below 0.61
      */
     public function getRankingCategory($finalScore)
     {
@@ -222,9 +222,42 @@ class ScoreCalculationService
             return 'Silver';
         } elseif ($finalScore >= 1.21) {
             return 'Bronze';
+        } elseif ($finalScore >= 0.61) {
+            return 'Certificate';
         } else {
             return 'No Award';
         }
+    }
+
+    /**
+     * Get recommendation text based on final score and award category
+     */
+    public function getRecommendationText($finalScore)
+    {
+        $category = $this->getRankingCategory($finalScore);
+
+        return match($category) {
+            'Gold' => [
+                'Recommended for Highest Position or Exec Position (Uniwide/Schoolwide)',
+                'Recommended for Legislative Position (Schoolwide)'
+            ],
+            'Silver' => [
+                'Recommended for Legislative positions (Schoolwide)',
+                'Recommended for Judiciary (Coordinators Uniwide)',
+                'Mayoral Position (Schoolwide)'
+            ],
+            'Bronze' => [
+                'On Probation for appointed positions only - Coordinators (Uniwide)',
+                'For coordinators/clubs only (Schoolwide)'
+            ],
+            'Certificate' => [
+                'Not Recommended'
+            ],
+            'No Award' => [
+                'Not Recommended'
+            ],
+            default => ['Not Available']
+        };
     }
 
     /**

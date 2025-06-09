@@ -14,6 +14,17 @@
                     <i class="fas fa-info-circle mr-1"></i>
                     Adviser Evaluation: 50% | Length of Service: 15% (evaluated separately)
                 </p>
+                @if($council->isEvaluationInstanceActive())
+                    <div class="mt-2 inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        <i class="fas fa-edit mr-1"></i>
+                        Draft Mode - Can be edited until finalized
+                    </div>
+                @elseif($council->isEvaluationInstanceFinalized())
+                    <div class="mt-2 inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                        <i class="fas fa-lock mr-1"></i>
+                        Finalized - Cannot be edited
+                    </div>
+                @endif
             </div>
             <div class="text-right">
                 <p class="text-sm text-gray-600">Academic Year: {{ $council->academic_year ?? '2024-2025' }}</p>
@@ -41,11 +52,16 @@
     </div>
 
     <!-- Evaluation Form -->
-    <form action="{{ route('adviser.evaluation.adviser_store') }}" method="POST" id="evaluationForm">
+    <form action="{{ isset($evaluation) ? route('adviser.evaluation.adviser_update', $evaluation) : route('adviser.evaluation.adviser_store') }}" method="POST" id="evaluationForm">
         @csrf
+        @if(isset($evaluation))
+            @method('PUT')
+        @endif
         <input type="hidden" name="council_id" value="{{ $council->id ?? 1 }}">
         <input type="hidden" name="evaluated_student_id" value="{{ $student->id ?? 1 }}">
         <input type="hidden" name="evaluator_type" value="adviser">
+
+
 
         @foreach($questions as $domainIndex => $domain)
             <!-- Domain Section -->
@@ -71,11 +87,18 @@
 
                                     <div class="space-y-2">
                                         @foreach($question['rating_options'] as $option)
+                                            @php
+                                                $fieldName = 'domain' . ($domainIndex + 1) . '_strand' . ($strandIndex + 1) . '_q' . ($questionIndex + 1);
+                                                $storedValue = isset($existingResponses[$fieldName]) ? trim((string)$existingResponses[$fieldName]) : '';
+                                                $optionValue = trim((string)($option['value'] . '.00'));
+                                                $isChecked = $storedValue !== '' && $storedValue === $optionValue;
+                                            @endphp
                                             <label class="flex items-start space-x-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
                                                 <input type="radio"
                                                        name="domain{{ $domainIndex + 1 }}_strand{{ $strandIndex + 1 }}_q{{ $questionIndex + 1 }}"
                                                        value="{{ $option['value'] }}.00"
                                                        class="mt-1 text-green-600 focus:ring-green-500"
+                                                       {{ $isChecked ? 'checked' : '' }}
                                                        required>
                                                 <div class="flex-1">
                                                     <div class="text-sm font-medium text-gray-900">
@@ -98,40 +121,84 @@
             <div class="bg-green-600 text-white p-4 rounded-t-lg">
                 <h2 class="text-lg font-semibold">Length of Service Evaluation</h2>
             </div>
+            <div class="p-6">
+                @php
+                    $completedCouncils = $student->getCompletedCouncilsCount();
+                    $isFirstTimeStudent = $completedCouncils == 0;
+                @endphp
 
-            <div class="p-4">
-                <div class="border border-gray-200 rounded-lg p-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-3">
-                        Length of Service Evaluation
-                    </label>
-
-                    <div class="space-y-2">
-                        <label class="flex items-start space-x-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
-                            <input type="radio" name="length_of_service" value="0.00" class="mt-1 text-green-600 focus:ring-green-500" required>
-                            <div class="flex-1">
-                                <div class="text-sm font-medium text-gray-900">Less than 6 months (0.00)</div>
+                @if($isFirstTimeStudent)
+                    <!-- Manual selection for first-time students -->
+                    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+                        <div class="flex items-start space-x-3">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-exclamation-triangle text-yellow-600 mt-1"></i>
                             </div>
-                        </label>
-                        <label class="flex items-start space-x-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
-                            <input type="radio" name="length_of_service" value="1.00" class="mt-1 text-green-600 focus:ring-green-500" required>
                             <div class="flex-1">
-                                <div class="text-sm font-medium text-gray-900">6 months to 1 year (1.00)</div>
+                                <h3 class="text-sm font-medium text-yellow-800 mb-2">First-Time Council Participant</h3>
+                                <p class="text-sm text-yellow-700">
+                                    This student is participating in their first council. Please determine if they have successfully finished their current term.
+                                </p>
                             </div>
-                        </label>
-                        <label class="flex items-start space-x-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
-                            <input type="radio" name="length_of_service" value="2.00" class="mt-1 text-green-600 focus:ring-green-500" required>
-                            <div class="flex-1">
-                                <div class="text-sm font-medium text-gray-900">1 to 2 years (2.00)</div>
-                            </div>
-                        </label>
-                        <label class="flex items-start space-x-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
-                            <input type="radio" name="length_of_service" value="3.00" class="mt-1 text-green-600 focus:ring-green-500" required>
-                            <div class="flex-1">
-                                <div class="text-sm font-medium text-gray-900">More than 2 years (3.00)</div>
-                            </div>
-                        </label>
+                        </div>
                     </div>
-                </div>
+
+                    <div class="border border-gray-200 rounded-lg p-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-3">
+                            Did this student successfully finish their current council term?
+                        </label>
+
+                        <div class="space-y-2">
+                            @php
+                                $lengthOfServiceValue = isset($existingResponses['length_of_service']) ? trim((string)$existingResponses['length_of_service']) : '';
+                            @endphp
+
+                            <label class="flex items-start space-x-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                                <input type="radio" name="length_of_service" value="0.00" class="mt-1 text-green-600 focus:ring-green-500" {{ $lengthOfServiceValue === '0.00' ? 'checked' : '' }} required>
+                                <div class="flex-1">
+                                    <div class="text-sm font-medium text-gray-900">No - Did not finish their term (0.00)</div>
+                                    <div class="text-xs text-gray-500">Student did not successfully complete their first council term</div>
+                                </div>
+                            </label>
+
+                            <label class="flex items-start space-x-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                                <input type="radio" name="length_of_service" value="1.00" class="mt-1 text-green-600 focus:ring-green-500" {{ $lengthOfServiceValue === '1.00' ? 'checked' : '' }} required>
+                                <div class="flex-1">
+                                    <div class="text-sm font-medium text-gray-900">Yes - Finished one term (1.00)</div>
+                                    <div class="text-xs text-gray-500">Student successfully completed their first council term</div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                @else
+                    <!-- Automatic calculation for experienced students -->
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <div class="flex items-start space-x-3">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-info-circle text-blue-600 mt-1"></i>
+                            </div>
+                            <div class="flex-1">
+                                <h3 class="text-sm font-medium text-blue-800 mb-2">Automatic Length of Service Calculation</h3>
+                                <p class="text-sm text-blue-700 mb-3">
+                                    This student has previous council experience. Their length of service is automatically calculated based on completed council terms.
+                                </p>
+                                <div class="bg-white rounded-lg p-3 border border-blue-200">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-sm font-medium text-gray-700">Student's Length of Service:</span>
+                                        <span class="text-lg font-semibold text-green-600">
+                                            {{ $student->getLengthOfServiceDescription() }}
+                                        </span>
+                                    </div>
+                                    <div class="mt-2 text-xs text-gray-500">
+                                        Based on {{ $completedCouncils }} completed council term(s)
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Hidden field to store the calculated length of service -->
+                    <input type="hidden" name="length_of_service" value="{{ $student->calculateLengthOfService() }}">
+                @endif
             </div>
         </div>
 
@@ -142,10 +209,20 @@
                    class="bg-gray-300 hover:bg-gray-400 text-gray-700 px-6 py-2 rounded-lg text-sm font-medium transition-colors">
                     <i class="fas fa-arrow-left mr-2"></i>Back to Council
                 </a>
-                <button type="submit"
-                        class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg text-sm font-medium transition-colors">
-                    <i class="fas fa-save mr-2"></i>Submit Evaluation
-                </button>
+                @if($council->isEvaluationInstanceFinalized())
+                    <span class="bg-gray-400 text-white px-6 py-2 rounded-lg text-sm font-medium cursor-not-allowed">
+                        <i class="fas fa-lock mr-2"></i>Evaluation Finalized
+                    </span>
+                @else
+                    <button type="submit"
+                            class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg text-sm font-medium transition-colors">
+                        @if($council->isEvaluationInstanceActive())
+                            <i class="fas fa-save mr-2"></i>{{ isset($evaluation) ? 'Update Draft' : 'Save as Draft' }}
+                        @else
+                            <i class="fas fa-save mr-2"></i>{{ isset($evaluation) ? 'Update Evaluation' : 'Submit Evaluation' }}
+                        @endif
+                    </button>
+                @endif
             </div>
         </div>
     </form>
@@ -176,7 +253,11 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         // Confirm submission
-        if (confirm('Are you sure you want to submit this evaluation? You will not be able to edit it after submission.')) {
+        const isEditing = form.querySelector('input[name="_method"]') !== null;
+        const action = isEditing ? 'update' : 'submit';
+        const message = `Are you sure you want to ${action} this evaluation?`;
+
+        if (confirm(message)) {
             form.submit();
         }
     });

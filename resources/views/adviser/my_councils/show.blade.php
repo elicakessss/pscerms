@@ -278,7 +278,7 @@
                                             </a>
 
                                             <!-- Peer Evaluator Assignment Dropdown -->
-                                            @if(!$council->hasEvaluations())
+                                            @if(!$council->hasEvaluations() && !$council->isEvaluationInstanceFinalized())
                                                 <div class="relative inline-block text-left">
                                                     <button type="button"
                                                             onclick="toggleDropdown('peer-dropdown-{{ $position['officer']->id }}')"
@@ -335,13 +335,16 @@
                                             @endif
 
                                             <!-- Remove Button -->
-                                            <button onclick="confirmRemoveOfficer({{ $position['officer']->id }}, '{{ $position['officer']->student->first_name }} {{ $position['officer']->student->last_name }}')"
-                                                    class="inline-flex items-center px-3 py-1.5 bg-red-600 text-white text-xs rounded hover:bg-red-700 transition-colors">
-                                                <i class="fas fa-trash mr-1"></i>
-                                                Remove
-                                            </button>
+                                            @if(!$council->isEvaluationInstanceFinalized())
+                                                <button onclick="confirmRemoveOfficer({{ $position['officer']->id }}, '{{ $position['officer']->student->first_name }} {{ $position['officer']->student->last_name }}')"
+                                                        class="inline-flex items-center px-3 py-1.5 bg-red-600 text-white text-xs rounded hover:bg-red-700 transition-colors">
+                                                    <i class="fas fa-trash mr-1"></i>
+                                                    Remove
+                                                </button>
+                                            @endif
                                         @else
-                                            <form action="{{ route('adviser.councils.assign_officer', $council) }}" method="POST" class="flex items-center space-x-2">
+                                            @if(!$council->isEvaluationInstanceFinalized())
+                                                <form action="{{ route('adviser.councils.assign_officer', $council) }}" method="POST" class="flex items-center space-x-2">
                                                 @csrf
                                                 <input type="hidden" name="position_title" value="{{ $position['title'] }}">
                                                 @php
@@ -374,6 +377,12 @@
                                                     Assign
                                                 </button>
                                             </form>
+                                            @else
+                                                <span class="inline-flex items-center px-3 py-1.5 bg-gray-400 text-white text-xs rounded cursor-not-allowed">
+                                                    <i class="fas fa-lock mr-1"></i>
+                                                    Locked
+                                                </span>
+                                            @endif
                                         @endif
                                     </td>
                                 </tr>
@@ -383,8 +392,9 @@
                 </div>
 
                 @if($council->department->abbreviation === 'UNIWIDE')
-                    <!-- Dynamic Position Forms - Side by Side Layout -->
-                    <div class="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    @if(!$council->isEvaluationInstanceFinalized())
+                        <!-- Dynamic Position Forms - Side by Side Layout -->
+                        <div class="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <!-- Add Senator Section -->
                         <div class="p-4 bg-green-50 border border-green-200 rounded-lg">
                             <h4 class="text-lg font-semibold text-gray-900 mb-4">Add Senator Position</h4>
@@ -558,9 +568,23 @@
                             <p class="text-sm text-green-600 mt-2">Enter the coordinator type (e.g., "Logistics") and "Coordinator" will be automatically added to create the full title.</p>
                         </div>
                     </div>
+                    @else
+                        <!-- Evaluation Instance Finalized - No Position Management -->
+                        <div class="mt-8 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                            <div class="text-center">
+                                <i class="fas fa-lock text-gray-400 text-3xl mb-3"></i>
+                                <h4 class="text-lg font-medium text-gray-900 mb-2">Position Management Locked</h4>
+                                <p class="text-gray-600">
+                                    The evaluation instance has been finalized. Position assignments and modifications are no longer allowed.
+                                    Only viewing of existing positions is permitted.
+                                </p>
+                            </div>
+                        </div>
+                    @endif
                 @else
-                    <!-- Add Coordinator Section for Non-UNIWIDE Councils -->
-                    <div class="mt-8 p-4 bg-green-50 border border-green-200 rounded-lg">
+                    @if(!$council->isEvaluationInstanceFinalized())
+                        <!-- Add Coordinator Section for Non-UNIWIDE Councils -->
+                        <div class="mt-8 p-4 bg-green-50 border border-green-200 rounded-lg">
                         <h4 class="text-lg font-semibold text-gray-900 mb-4">Add Coordinator Position</h4>
                         <form action="{{ route('adviser.councils.add_coordinator', $council) }}" method="POST" class="space-y-3">
                             @csrf
@@ -604,7 +628,7 @@
                         <p class="text-sm text-green-600 mt-2">Enter the coordinator type (e.g., "Logistics") and "Coordinator" will be automatically added to create the full title.</p>
                     </div>
                     <!-- Updated Information Note -->
-                    <div class="mt-8 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    {{-- <div class="mt-8 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                         <h5 class="text-sm font-medium text-blue-800 mb-1">Uniwide Council Information:</h5>
                         <ul class="text-xs text-blue-700 space-y-1">
                             <li>• <strong>Position Order:</strong> Executive → Senate → Representatives → Justices → Coordinators</li>
@@ -614,7 +638,20 @@
                             <li>• <strong>Coordinators:</strong> Custom prefix + "Coordinator" (e.g., "Logistics Coordinator")</li>
                             <li>• Students cannot be in multiple councils in the same academic year</li>
                         </ul>
-                    </div>
+                    </div> --}}
+                    @else
+                        <!-- Evaluation Instance Finalized - No Position Management -->
+                        <div class="mt-8 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                            <div class="text-center">
+                                <i class="fas fa-lock text-gray-400 text-3xl mb-3"></i>
+                                <h4 class="text-lg font-medium text-gray-900 mb-2">Position Management Locked</h4>
+                                <p class="text-gray-600">
+                                    The evaluation instance has been finalized. Position assignments and modifications are no longer allowed.
+                                    Only viewing of existing positions is permitted.
+                                </p>
+                            </div>
+                        </div>
+                    @endif
                 @endif
             @else
                 <div class="text-center py-8">
@@ -632,15 +669,16 @@
     <div id="evaluations-section" class="section-content hidden">
         <div class="p-6">
             @if($council->councilOfficers->count() > 0)
-                <!-- Start Evaluations Button -->
-                @if($council->canStartEvaluations())
+                <!-- Start Evaluation Instance Button -->
+                @if($council->canStartEvaluationInstance())
                 <div class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                     <div class="flex items-center justify-between">
                         <div>
-                            <h4 class="text-lg font-medium text-blue-900">Ready to Start Evaluations</h4>
+                            <h4 class="text-lg font-medium text-blue-900">Ready to Start Evaluation Instance</h4>
                             <p class="text-sm text-blue-700 mt-1">
-                                This will create evaluation instances for all {{ $council->councilOfficers->count() }} officers.
-                                Each officer will receive self-evaluation, peer evaluations from assigned peer evaluators, and adviser evaluation.
+                                This will start the evaluation instance for all {{ $council->councilOfficers->count() }} officers.
+                                During the active instance, evaluations will be saved as drafts and can be edited.
+                                You can finalize the instance when all evaluations are completed.
                             </p>
                             @php
                                 $peerEvaluators = $council->getPeerEvaluators();
@@ -659,7 +697,7 @@
                                     onclick="confirmStartEvaluationDetails('{{ $council->name }}', {{ $council->councilOfficers->count() }})"
                                     class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
                                 <i class="fas fa-play mr-2"></i>
-                                Start Evaluations
+                                Start Evaluation Instance
                             </button>
                         </form>
                     </div>
@@ -689,29 +727,66 @@
                         </div>
                     </div>
                 </div>
-                @elseif($council->hasEvaluations())
+                @elseif($council->isEvaluationInstanceActive())
                 <div class="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
                     <div class="flex items-center justify-between">
                         <div class="flex items-center">
-                            <i class="fas fa-check-circle text-green-600 mr-3"></i>
+                            <i class="fas fa-edit text-green-600 mr-3"></i>
                             <div>
-                                <h4 class="text-lg font-medium text-green-900">Evaluations Started</h4>
+                                <h4 class="text-lg font-medium text-green-900">Evaluation Instance Active</h4>
                                 <p class="text-sm text-green-700 mt-1">
-                                    Evaluation instances have been created. Students and advisers can now complete their evaluations.
+                                    Evaluations are being saved as drafts and can be edited.
+                                    @if($council->canFinalizeEvaluationInstance())
+                                        All evaluations are completed - you can now finalize the instance.
+                                    @else
+                                        Complete all evaluations before finalizing the instance.
+                                    @endif
+                                </p>
+                                <p class="text-xs text-green-600 mt-1">
+                                    Started: {{ $council->evaluation_instance_started_at->format('M j, Y g:i A') }}
                                 </p>
                             </div>
                         </div>
-                        <div class="ml-4">
+                        <div class="ml-4 flex space-x-2">
+                            @if($council->canFinalizeEvaluationInstance())
+                                <form action="{{ route('adviser.councils.finalize_evaluations', $council) }}" method="POST" class="inline">
+                                    @csrf
+                                    <button type="submit"
+                                            onclick="return confirm('Are you sure you want to finalize the evaluation instance? This will lock all evaluations and calculate final scores. This action cannot be undone.')"
+                                            class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                                        <i class="fas fa-lock mr-2"></i>
+                                        Finalize Instance
+                                    </button>
+                                </form>
+                            @endif
                             <form action="{{ route('adviser.councils.clear_evaluations', $council) }}" method="POST" class="inline">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit"
-                                        onclick="return confirm('Are you sure you want to clear all evaluations? This will delete all evaluation data and cannot be undone.')"
+                                        onclick="return confirm('Are you sure you want to clear all evaluations? This will delete all evaluation data and reset the instance. This action cannot be undone.')"
                                         class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
                                     <i class="fas fa-trash mr-2"></i>
                                     Clear Evaluations
                                 </button>
                             </form>
+                        </div>
+                    </div>
+                </div>
+                @elseif($council->isEvaluationInstanceFinalized())
+                <div class="mb-6 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <i class="fas fa-lock text-gray-600 mr-3"></i>
+                            <div>
+                                <h4 class="text-lg font-medium text-gray-900">Evaluation Instance Finalized</h4>
+                                <p class="text-sm text-gray-700 mt-1">
+                                    All evaluations are locked and final scores have been calculated.
+                                    Evaluations can only be viewed, not edited.
+                                </p>
+                                <p class="text-xs text-gray-600 mt-1">
+                                    Finalized: {{ $council->evaluation_instance_finalized_at->format('M j, Y g:i A') }}
+                                </p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -843,20 +918,35 @@
                                                     ->first();
                                             @endphp
 
-                                            @if($adviserEvaluation && $adviserEvaluation->status === 'completed')
-                                                <span class="text-green-600 text-sm">
-                                                    <i class="fas fa-check-circle mr-1"></i>
-                                                    Evaluated
-                                                </span>
-                                            @else
-                                                <a href="{{ route('adviser.evaluation.show', [$council, $officer->student]) }}"
-                                                   class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm transition-colors">
-                                                    <i class="fas fa-edit mr-1"></i>
-                                                    Evaluate
-                                                </a>
+                                            @if($council->isEvaluationInstanceFinalized())
+                                                <!-- Finalized instance - only view -->
+                                                @if($adviserEvaluation && $adviserEvaluation->status === 'completed')
+                                                    <a href="{{ route('adviser.evaluation.edit', [$council, $officer->student]) }}"
+                                                       class="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 rounded text-sm transition-colors">
+                                                        <i class="fas fa-eye mr-1"></i>
+                                                        View
+                                                    </a>
+                                                @else
+                                                    <span class="text-gray-400 text-sm">Not evaluated</span>
+                                                @endif
+                                            @elseif($council->isEvaluationInstanceActive())
+                                                <!-- Active instance - can edit/evaluate -->
+                                                @if($adviserEvaluation && $adviserEvaluation->status === 'completed')
+                                                    <a href="{{ route('adviser.evaluation.edit', [$council, $officer->student]) }}"
+                                                       class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm transition-colors">
+                                                        <i class="fas fa-edit mr-1"></i>
+                                                        Edit Draft
+                                                    </a>
+                                                @else
+                                                    <a href="{{ route('adviser.evaluation.show', [$council, $officer->student]) }}"
+                                                       class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm transition-colors">
+                                                        <i class="fas fa-edit mr-1"></i>
+                                                        Evaluate
+                                                    </a>
+                                                @endif
                                             @endif
                                         @else
-                                            <span class="text-gray-400 text-sm">Start evaluations first</span>
+                                            <span class="text-gray-400 text-sm">Start evaluation instance first</span>
                                         @endif
                                     </td>
                                 </tr>
@@ -1007,8 +1097,8 @@ document.getElementById('removeOfficerModal').addEventListener('click', function
 // Confirm start evaluation for details page
 function confirmStartEvaluationDetails(councilName, officerCount) {
     showConfirmation(
-        'Start Evaluations',
-        `This will create evaluation instances for all ${officerCount} officers in ${councilName}. Each officer will receive self-evaluation, peer evaluations from executives, and adviser evaluation.`,
+        'Start Evaluation Instance',
+        `This will start the evaluation instance for all ${officerCount} officers in ${councilName}. During the active instance, evaluations will be saved as drafts and can be edited. You can finalize the instance when all evaluations are completed.`,
         () => {
             document.getElementById('start-evaluation-form-details').submit();
         },

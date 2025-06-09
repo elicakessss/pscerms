@@ -227,31 +227,17 @@ document.addEventListener('DOMContentLoaded', function() {
         @endforeach
     @endforeach
 
-    console.log('Evaluation form initialized:', {
-        domainCounter: domainCounter,
-        strandCounters: strandCounters,
-        questionCounters: questionCounters
-    });
-
-    // Test that functions are accessible
-    console.log('Functions available:', {
-        addDomain: typeof window.addDomain,
-        addQuestion: typeof window.addQuestion,
-        addStrand: typeof window.addStrand
-    });
+    // Initialize evaluation form
 
     // Make functions global so they can be called from onclick handlers
     window.addDomain = function() {
-        console.log('addDomain called');
         const container = document.getElementById('domainsContainer');
 
         if (!container) {
-            console.error('domainsContainer not found');
             return;
         }
 
         const domainIndex = domainCounter++;
-        console.log('Creating domain with index:', domainIndex);
 
         strandCounters[domainIndex] = 1;
         questionCounters[domainIndex] = {0: 1};
@@ -376,25 +362,20 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     window.addQuestion = function(domainIndex, strandIndex) {
-        console.log('addQuestion called with:', { domainIndex, strandIndex });
         const container = document.querySelector(`[data-domain-index="${domainIndex}"] [data-strand-index="${strandIndex}"] .questions-container`);
 
         if (!container) {
-            console.error('Container not found for:', { domainIndex, strandIndex });
             return;
         }
 
         if (!questionCounters[domainIndex] || !questionCounters[domainIndex][strandIndex]) {
-            console.error('Question counter not found for:', { domainIndex, strandIndex });
             return;
         }
 
         const questionIndex = questionCounters[domainIndex][strandIndex]++;
-        console.log('Creating question with index:', questionIndex);
 
         const questionHtml = createQuestionHtml(domainIndex, strandIndex, questionIndex);
         container.insertAdjacentHTML('beforeend', questionHtml);
-        console.log('Question added successfully');
     };
 
     window.removeQuestion = function(domainIndex, strandIndex, questionIndex) {

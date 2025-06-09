@@ -33,8 +33,9 @@ abstract class BaseAccountController extends Controller
     protected function getProfileValidationRules($userId): array
     {
         $userType = $this->getUserType();
-        
+
         $rules = [
+            'id_number' => "required|string|max:255|unique:{$userType}s,id_number,{$userId}",
             'email' => "required|email|max:255|unique:{$userType}s,email,{$userId}",
         ];
 
@@ -69,7 +70,7 @@ abstract class BaseAccountController extends Controller
         // Store new profile picture
         $userType = $this->getUserType();
         $path = $request->file('profile_picture')->store("profile_pictures/{$userType}s", 'public');
-        
+
         return $path;
     }
 

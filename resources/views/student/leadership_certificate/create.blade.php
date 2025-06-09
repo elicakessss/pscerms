@@ -6,7 +6,7 @@
 @section('content')
 <div class="max-w-4xl mx-auto">
 
-    @if($campusCouncils->isEmpty() && $departmentalCouncils->isEmpty())
+    @if(!$canRequestCampus && !$canRequestDepartmental)
         <!-- No Completed Councils -->
         <div class="text-center py-12">
             <div class="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -47,38 +47,38 @@
                     <div class="mb-6">
                         <label class="block text-sm font-medium text-gray-700 mb-3">Certificate Type</label>
                         <div class="space-y-4">
-                            @if($campusCouncils->isNotEmpty())
+                            @if($canRequestCampus)
                                 <!-- Campus Leadership Award -->
                                 <div class="border border-gray-200 rounded-lg p-4">
                                     <label class="flex items-start space-x-3 cursor-pointer">
                                         <input type="radio" name="certificate_type" value="campus"
                                                class="mt-1 text-green-600 focus:ring-green-500"
                                                {{ old('certificate_type') == 'campus' ? 'checked' : '' }}
-                                               onchange="updateCouncilOptions()">
-                                        <div>
+                                               onchange="showTermDetails()">
+                                        <div class="flex-1">
                                             <div class="font-medium text-gray-900">Campus Leadership Award</div>
                                             <div class="text-sm text-gray-600">For UNIWIDE council participation</div>
                                             <div class="text-xs text-gray-500 mt-1">
-                                                Available councils: {{ $campusCouncils->count() }}
+                                                Based on your latest UNIWIDE council term
                                             </div>
                                         </div>
                                     </label>
                                 </div>
                             @endif
 
-                            @if($departmentalCouncils->isNotEmpty())
+                            @if($canRequestDepartmental)
                                 <!-- Departmental Leadership Award -->
                                 <div class="border border-gray-200 rounded-lg p-4">
                                     <label class="flex items-start space-x-3 cursor-pointer">
                                         <input type="radio" name="certificate_type" value="departmental"
                                                class="mt-1 text-green-600 focus:ring-green-500"
                                                {{ old('certificate_type') == 'departmental' ? 'checked' : '' }}
-                                               onchange="updateCouncilOptions()">
-                                        <div>
+                                               onchange="showTermDetails()">
+                                        <div class="flex-1">
                                             <div class="font-medium text-gray-900">Departmental Leadership Award</div>
                                             <div class="text-sm text-gray-600">For departmental council participation</div>
                                             <div class="text-xs text-gray-500 mt-1">
-                                                Available councils: {{ $departmentalCouncils->count() }}
+                                                Based on your latest departmental council term
                                             </div>
                                         </div>
                                     </label>
@@ -90,145 +90,129 @@
                         @enderror
                     </div>
 
-                <!-- Council Selection with Rank Results -->
+                <!-- Term Details Display -->
                 <div class="mb-6">
-                    <label for="council_id" class="block text-sm font-medium text-gray-700 mb-2">Select Council</label>
-
-                    @if($campusCouncils->isNotEmpty())
-                        <!-- Campus Councils -->
-                        <div id="campus_councils" class="hidden space-y-4">
-                            <select name="council_id" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500" onchange="showRankDetails('campus')">
-                                <option value="">Select a UNIWIDE council...</option>
-                                @foreach($campusCouncils as $councilData)
-                                    <option value="{{ $councilData['council']->id }}" {{ old('council_id') == $councilData['council']->id ? 'selected' : '' }}>
-                                        {{ $councilData['council']->name }} - {{ $councilData['council']->academic_year }}
-                                    </option>
-                                @endforeach
-                            </select>
-
-                            <!-- Rank Results for Campus Councils -->
-                            @foreach($campusCouncils as $councilData)
-                                <div id="rank_details_campus_{{ $councilData['council']->id }}" class="rank-details hidden bg-blue-50 border border-blue-200 rounded-lg p-4">
-                                    <h4 class="font-medium text-blue-900 mb-3 flex items-center">
-                                        <i class="fas fa-trophy mr-2"></i>
-                                        Your Performance Results
-                                    </h4>
-                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div class="space-y-2">
-                                            <div class="flex justify-between">
-                                                <span class="text-sm text-gray-600">Position:</span>
-                                                <span class="text-sm font-medium">{{ $councilData['student_position'] }}</span>
-                                            </div>
-                                            <div class="flex justify-between">
-                                                <span class="text-sm text-gray-600">Final Score:</span>
-                                                <span class="text-sm font-medium">{{ number_format($councilData['student_final_score'], 2) }}</span>
-                                            </div>
-                                            <div class="flex justify-between">
-                                                <span class="text-sm text-gray-600">Award Rank:</span>
-                                                <span class="text-sm font-bold
-                                                    @if($councilData['student_rank'] === 'Gold') text-yellow-600
-                                                    @elseif($councilData['student_rank'] === 'Silver') text-gray-600
-                                                    @elseif($councilData['student_rank'] === 'Bronze') text-orange-600
-                                                    @else text-red-600 @endif">
-                                                    {{ $councilData['student_rank'] ?? 'Not Available' }}
-                                                </span>
-                                            </div>
-                                        </div>
-                                        <div class="space-y-2">
-                                            <div class="flex justify-between">
-                                                <span class="text-sm text-gray-600">Self Score:</span>
-                                                <span class="text-sm font-medium">{{ $councilData['student_self_score'] ? number_format($councilData['student_self_score'], 2) : 'N/A' }}</span>
-                                            </div>
-                                            <div class="flex justify-between">
-                                                <span class="text-sm text-gray-600">Peer Score:</span>
-                                                <span class="text-sm font-medium">{{ $councilData['student_peer_score'] ? number_format($councilData['student_peer_score'], 2) : 'N/A' }}</span>
-                                            </div>
-                                            <div class="flex justify-between">
-                                                <span class="text-sm text-gray-600">Adviser Score:</span>
-                                                <span class="text-sm font-medium">{{ $councilData['student_adviser_score'] ? number_format($councilData['student_adviser_score'], 2) : 'N/A' }}</span>
-                                            </div>
-                                        </div>
+                    @if($canRequestCampus && $latestUniwideOfficer)
+                        <!-- Campus Term Details -->
+                        <div id="campus_term_details" class="hidden bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                            <h4 class="font-medium text-blue-900 mb-3 flex items-center">
+                                <i class="fas fa-trophy mr-2"></i>
+                                Campus Leadership Award - Latest Term Details
+                            </h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="space-y-2">
+                                    <div class="flex justify-between">
+                                        <span class="text-sm text-gray-600">Council:</span>
+                                        <span class="text-sm font-medium">{{ $latestUniwideOfficer->council->name ?? 'N/A' }}</span>
                                     </div>
-                                    <div class="mt-3 p-3 bg-blue-100 rounded-md">
-                                        <p class="text-xs text-blue-800">
-                                            <i class="fas fa-info-circle mr-1"></i>
-                                            These results will be included in your leadership certificate as reference for your academic and professional achievements.
-                                        </p>
+                                    <div class="flex justify-between">
+                                        <span class="text-sm text-gray-600">Academic Year:</span>
+                                        <span class="text-sm font-medium">{{ $latestUniwideOfficer->council->academic_year ?? 'N/A' }}</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-sm text-gray-600">Position:</span>
+                                        <span class="text-sm font-medium">{{ $latestUniwideOfficer->position_title ?? 'N/A' }}</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-sm text-gray-600">Final Score:</span>
+                                        <span class="text-sm font-medium">{{ $latestUniwideOfficer->final_score ? number_format($latestUniwideOfficer->final_score, 2) : 'N/A' }}</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-sm text-gray-600">Award Rank:</span>
+                                        <span class="text-sm font-bold
+                                            @if($latestUniwideOfficer->ranking_category === 'Gold') text-yellow-600
+                                            @elseif($latestUniwideOfficer->ranking_category === 'Silver') text-gray-600
+                                            @elseif($latestUniwideOfficer->ranking_category === 'Bronze') text-orange-600
+                                            @elseif($latestUniwideOfficer->ranking_category === 'Certificate') text-blue-600
+                                            @else text-red-600 @endif">
+                                            {{ $latestUniwideOfficer->ranking_category ?? 'Not Available' }}
+                                        </span>
                                     </div>
                                 </div>
-                            @endforeach
+                                <div class="space-y-2">
+                                    <div class="flex justify-between">
+                                        <span class="text-sm text-gray-600">Self Score:</span>
+                                        <span class="text-sm font-medium">{{ $latestUniwideOfficer->self_score ? number_format($latestUniwideOfficer->self_score, 2) : 'N/A' }}</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-sm text-gray-600">Peer Score:</span>
+                                        <span class="text-sm font-medium">{{ $latestUniwideOfficer->peer_score ? number_format($latestUniwideOfficer->peer_score, 2) : 'N/A' }}</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-sm text-gray-600">Adviser Score:</span>
+                                        <span class="text-sm font-medium">{{ $latestUniwideOfficer->adviser_score ? number_format($latestUniwideOfficer->adviser_score, 2) : 'N/A' }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-3 p-3 bg-blue-100 rounded-md">
+                                <p class="text-xs text-blue-800">
+                                    <i class="fas fa-info-circle mr-1"></i>
+                                    These results from your latest UNIWIDE council term will be included in your leadership certificate.
+                                </p>
+                            </div>
                         </div>
                     @endif
 
-                    @if($departmentalCouncils->isNotEmpty())
-                        <!-- Departmental Councils -->
-                        <div id="departmental_councils" class="hidden space-y-4">
-                            <select name="council_id" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500" onchange="showRankDetails('departmental')">
-                                <option value="">Select a departmental council...</option>
-                                @foreach($departmentalCouncils as $councilData)
-                                    <option value="{{ $councilData['council']->id }}" {{ old('council_id') == $councilData['council']->id ? 'selected' : '' }}>
-                                        {{ $councilData['council']->name }} - {{ $councilData['council']->academic_year }}
-                                    </option>
-                                @endforeach
-                            </select>
-
-                            <!-- Rank Results for Departmental Councils -->
-                            @foreach($departmentalCouncils as $councilData)
-                                <div id="rank_details_departmental_{{ $councilData['council']->id }}" class="rank-details hidden bg-green-50 border border-green-200 rounded-lg p-4">
-                                    <h4 class="font-medium text-green-900 mb-3 flex items-center">
-                                        <i class="fas fa-trophy mr-2"></i>
-                                        Your Performance Results
-                                    </h4>
-                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div class="space-y-2">
-                                            <div class="flex justify-between">
-                                                <span class="text-sm text-gray-600">Position:</span>
-                                                <span class="text-sm font-medium">{{ $councilData['student_position'] }}</span>
-                                            </div>
-                                            <div class="flex justify-between">
-                                                <span class="text-sm text-gray-600">Final Score:</span>
-                                                <span class="text-sm font-medium">{{ number_format($councilData['student_final_score'], 2) }}</span>
-                                            </div>
-                                            <div class="flex justify-between">
-                                                <span class="text-sm text-gray-600">Award Rank:</span>
-                                                <span class="text-sm font-bold
-                                                    @if($councilData['student_rank'] === 'Gold') text-yellow-600
-                                                    @elseif($councilData['student_rank'] === 'Silver') text-gray-600
-                                                    @elseif($councilData['student_rank'] === 'Bronze') text-orange-600
-                                                    @else text-red-600 @endif">
-                                                    {{ $councilData['student_rank'] ?? 'Not Available' }}
-                                                </span>
-                                            </div>
-                                        </div>
-                                        <div class="space-y-2">
-                                            <div class="flex justify-between">
-                                                <span class="text-sm text-gray-600">Self Score:</span>
-                                                <span class="text-sm font-medium">{{ $councilData['student_self_score'] ? number_format($councilData['student_self_score'], 2) : 'N/A' }}</span>
-                                            </div>
-                                            <div class="flex justify-between">
-                                                <span class="text-sm text-gray-600">Peer Score:</span>
-                                                <span class="text-sm font-medium">{{ $councilData['student_peer_score'] ? number_format($councilData['student_peer_score'], 2) : 'N/A' }}</span>
-                                            </div>
-                                            <div class="flex justify-between">
-                                                <span class="text-sm text-gray-600">Adviser Score:</span>
-                                                <span class="text-sm font-medium">{{ $councilData['student_adviser_score'] ? number_format($councilData['student_adviser_score'], 2) : 'N/A' }}</span>
-                                            </div>
-                                        </div>
+                    @if($canRequestDepartmental && $latestDepartmentalOfficer)
+                        <!-- Departmental Term Details -->
+                        <div id="departmental_term_details" class="hidden bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+                            <h4 class="font-medium text-green-900 mb-3 flex items-center">
+                                <i class="fas fa-trophy mr-2"></i>
+                                Departmental Leadership Award - Latest Term Details
+                            </h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="space-y-2">
+                                    <div class="flex justify-between">
+                                        <span class="text-sm text-gray-600">Council:</span>
+                                        <span class="text-sm font-medium">{{ $latestDepartmentalOfficer->council->name ?? 'N/A' }}</span>
                                     </div>
-                                    <div class="mt-3 p-3 bg-green-100 rounded-md">
-                                        <p class="text-xs text-green-800">
-                                            <i class="fas fa-info-circle mr-1"></i>
-                                            These results will be included in your leadership certificate as reference for your academic and professional achievements.
-                                        </p>
+                                    <div class="flex justify-between">
+                                        <span class="text-sm text-gray-600">Academic Year:</span>
+                                        <span class="text-sm font-medium">{{ $latestDepartmentalOfficer->council->academic_year ?? 'N/A' }}</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-sm text-gray-600">Position:</span>
+                                        <span class="text-sm font-medium">{{ $latestDepartmentalOfficer->position_title ?? 'N/A' }}</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-sm text-gray-600">Final Score:</span>
+                                        <span class="text-sm font-medium">{{ $latestDepartmentalOfficer->final_score ? number_format($latestDepartmentalOfficer->final_score, 2) : 'N/A' }}</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-sm text-gray-600">Award Rank:</span>
+                                        <span class="text-sm font-bold
+                                            @if($latestDepartmentalOfficer->ranking_category === 'Gold') text-yellow-600
+                                            @elseif($latestDepartmentalOfficer->ranking_category === 'Silver') text-gray-600
+                                            @elseif($latestDepartmentalOfficer->ranking_category === 'Bronze') text-orange-600
+                                            @elseif($latestDepartmentalOfficer->ranking_category === 'Certificate') text-blue-600
+                                            @else text-red-600 @endif">
+                                            {{ $latestDepartmentalOfficer->ranking_category ?? 'Not Available' }}
+                                        </span>
                                     </div>
                                 </div>
-                            @endforeach
+                                <div class="space-y-2">
+                                    <div class="flex justify-between">
+                                        <span class="text-sm text-gray-600">Self Score:</span>
+                                        <span class="text-sm font-medium">{{ $latestDepartmentalOfficer->self_score ? number_format($latestDepartmentalOfficer->self_score, 2) : 'N/A' }}</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-sm text-gray-600">Peer Score:</span>
+                                        <span class="text-sm font-medium">{{ $latestDepartmentalOfficer->peer_score ? number_format($latestDepartmentalOfficer->peer_score, 2) : 'N/A' }}</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-sm text-gray-600">Adviser Score:</span>
+                                        <span class="text-sm font-medium">{{ $latestDepartmentalOfficer->adviser_score ? number_format($latestDepartmentalOfficer->adviser_score, 2) : 'N/A' }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-3 p-3 bg-green-100 rounded-md">
+                                <p class="text-xs text-green-800">
+                                    <i class="fas fa-info-circle mr-1"></i>
+                                    These results from your latest departmental council term will be included in your leadership certificate.
+                                </p>
+                            </div>
                         </div>
                     @endif
-
-                    @error('council_id')
-                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                    @enderror
                 </div>
 
                 <!-- Graduation Confirmation -->
@@ -267,55 +251,27 @@
 </div>
 
 <script>
-function updateCouncilOptions() {
+function showTermDetails() {
     const certificateType = document.querySelector('input[name="certificate_type"]:checked');
-    const campusDiv = document.getElementById('campus_councils');
-    const departmentalDiv = document.getElementById('departmental_councils');
+    const campusDetails = document.getElementById('campus_term_details');
+    const departmentalDetails = document.getElementById('departmental_term_details');
 
-    // Hide all council options and rank details first
-    if (campusDiv) campusDiv.classList.add('hidden');
-    if (departmentalDiv) departmentalDiv.classList.add('hidden');
-
-    // Hide all rank details
-    document.querySelectorAll('.rank-details').forEach(detail => {
-        detail.classList.add('hidden');
-    });
-
-    // Clear previous selections
-    if (campusDiv) campusDiv.querySelector('select').selectedIndex = 0;
-    if (departmentalDiv) departmentalDiv.querySelector('select').selectedIndex = 0;
+    // Hide all term details first
+    if (campusDetails) campusDetails.classList.add('hidden');
+    if (departmentalDetails) departmentalDetails.classList.add('hidden');
 
     if (certificateType) {
-        if (certificateType.value === 'campus' && campusDiv) {
-            campusDiv.classList.remove('hidden');
-        } else if (certificateType.value === 'departmental' && departmentalDiv) {
-            departmentalDiv.classList.remove('hidden');
-        }
-    }
-}
-
-function showRankDetails(type) {
-    // Hide all rank details first
-    document.querySelectorAll('.rank-details').forEach(detail => {
-        detail.classList.add('hidden');
-    });
-
-    // Get the selected council ID
-    const selectElement = document.querySelector(`#${type}_councils select`);
-    const selectedCouncilId = selectElement.value;
-
-    if (selectedCouncilId) {
-        // Show the rank details for the selected council
-        const rankDetailsElement = document.getElementById(`rank_details_${type}_${selectedCouncilId}`);
-        if (rankDetailsElement) {
-            rankDetailsElement.classList.remove('hidden');
+        if (certificateType.value === 'campus' && campusDetails) {
+            campusDetails.classList.remove('hidden');
+        } else if (certificateType.value === 'departmental' && departmentalDetails) {
+            departmentalDetails.classList.remove('hidden');
         }
     }
 }
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
-    updateCouncilOptions();
+    showTermDetails();
 });
 </script>
 @endsection

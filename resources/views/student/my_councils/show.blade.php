@@ -220,4 +220,94 @@
         @endif
     </div>
 </div>
+
+<!-- Evaluations Section -->
+@if($council->hasEvaluations())
+<div class="bg-white rounded-lg shadow-sm border border-gray-200 mt-6">
+    <div class="p-6">
+        <h3 class="text-lg font-semibold text-gray-800 mb-4">
+            <i class="fas fa-chart-line text-green-600 mr-2"></i>
+            My Evaluations
+        </h3>
+
+        <div class="space-y-4">
+            @php
+                $student = auth()->user();
+
+                // Get self-evaluation
+                $selfEvaluation = \App\Models\Evaluation::where('council_id', $council->id)
+                    ->where('evaluator_id', $student->id)
+                    ->where('evaluator_type', 'self')
+                    ->where('evaluated_student_id', $student->id)
+                    ->first();
+
+                // Get peer evaluations where this student is the evaluator
+                $peerEvaluations = \App\Models\Evaluation::where('council_id', $council->id)
+                    ->where('evaluator_id', $student->id)
+                    ->where('evaluator_type', 'peer')
+                    ->with('evaluatedStudent')
+                    ->get();
+            @endphp
+
+            <!-- Self Evaluation -->
+            <div class="border border-gray-200 rounded-lg p-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h4 class="font-medium text-gray-800">Self Evaluation</h4>
+                        <p class="text-sm text-gray-600">Evaluate your own leadership performance</p>
+                    </div>
+                    <div>
+                        @if($selfEvaluation && $selfEvaluation->status === 'completed')
+                            <a href="{{ route('student.evaluation.self.edit', $council) }}"
+                               class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm transition-colors">
+                                <i class="fas fa-edit mr-1"></i>
+                                Edit
+                            </a>
+                        @elseif($selfEvaluation)
+                            <a href="{{ route('student.evaluation.self', $council) }}"
+                               class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm transition-colors">
+                                <i class="fas fa-edit mr-1"></i>
+                                Evaluate
+                            </a>
+                        @else
+                            <span class="text-gray-400 text-sm">Not available</span>
+                        @endif
+                    </div>
+                </div>
+            </div>
+
+            <!-- Peer Evaluations -->
+            @if($peerEvaluations->count() > 0)
+                @foreach($peerEvaluations as $peerEvaluation)
+                    <div class="border border-gray-200 rounded-lg p-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h4 class="font-medium text-gray-800">
+                                    Peer Evaluation - {{ $peerEvaluation->evaluatedStudent->first_name }} {{ $peerEvaluation->evaluatedStudent->last_name }}
+                                </h4>
+                                <p class="text-sm text-gray-600">Evaluate your fellow officer's performance</p>
+                            </div>
+                            <div>
+                                @if($peerEvaluation->status === 'completed')
+                                    <a href="{{ route('student.evaluation.peer.edit', [$council, $peerEvaluation->evaluatedStudent]) }}"
+                                       class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm transition-colors">
+                                        <i class="fas fa-edit mr-1"></i>
+                                        Edit
+                                    </a>
+                                @else
+                                    <a href="{{ route('student.evaluation.peer', [$council, $peerEvaluation->evaluatedStudent]) }}"
+                                       class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm transition-colors">
+                                        <i class="fas fa-edit mr-1"></i>
+                                        Evaluate
+                                    </a>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                @endforeach
+            @endif
+        </div>
+    </div>
+</div>
+@endif
 @endsection

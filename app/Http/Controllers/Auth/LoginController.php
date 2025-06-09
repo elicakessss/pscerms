@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Services\SystemLogService;
 
 class LoginController extends Controller
 {
@@ -36,6 +37,10 @@ class LoginController extends Controller
         if (Auth::guard($guard)->attempt($credentials)) {
             $request->session()->regenerate();
 
+            // Log successful login
+            $user = Auth::guard($guard)->user();
+            SystemLogService::logLogin($role, $user, $request);
+
             // Redirect based on role
             if ($role === 'student') {
                 return redirect()->route('student.dashboard');
@@ -53,6 +58,18 @@ class LoginController extends Controller
 
     public function logout(Request $request)
     {
+        // Log logout before actually logging out
+        if (Auth::guard('admin')->check()) {
+            $user = Auth::guard('admin')->user();
+            SystemLogService::logLogout('admin', $user, $request);
+        } elseif (Auth::guard('adviser')->check()) {
+            $user = Auth::guard('adviser')->user();
+            SystemLogService::logLogout('adviser', $user, $request);
+        } elseif (Auth::guard('student')->check()) {
+            $user = Auth::guard('student')->user();
+            SystemLogService::logLogout('student', $user, $request);
+        }
+
         Auth::logout();
 
         $request->session()->invalidate();

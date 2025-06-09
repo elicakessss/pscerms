@@ -141,11 +141,12 @@
                                 <div class="flex justify-between">
                                     <span class="text-sm text-gray-600">Award Rank:</span>
                                     <span class="text-sm font-bold
-                                        @if($studentOfficer->rank === 'Gold') text-yellow-600
-                                        @elseif($studentOfficer->rank === 'Silver') text-gray-600
-                                        @elseif($studentOfficer->rank === 'Bronze') text-orange-600
+                                        @if($studentOfficer->ranking_category === 'Gold') text-yellow-600
+                                        @elseif($studentOfficer->ranking_category === 'Silver') text-gray-600
+                                        @elseif($studentOfficer->ranking_category === 'Bronze') text-orange-600
+                                        @elseif($studentOfficer->ranking_category === 'Certificate') text-blue-600
                                         @else text-red-600 @endif">
-                                        {{ $studentOfficer->rank ?? 'Not Available' }}
+                                        {{ $studentOfficer->ranking_category ?? 'Not Available' }}
                                     </span>
                                 </div>
                             </div>
@@ -164,6 +165,29 @@
                                 </div>
                             </div>
                         </div>
+
+                        <!-- Recommendations Section -->
+                        @if($studentOfficer->final_score)
+                            @php
+                                $scoreService = app(\App\Services\ScoreCalculationService::class);
+                                $recommendations = $scoreService->getRecommendationText($studentOfficer->final_score);
+                            @endphp
+                            <div class="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                                <h5 class="text-sm font-medium text-green-800 mb-2 flex items-center">
+                                    <i class="fas fa-lightbulb mr-1"></i>
+                                    Leadership Recommendations
+                                </h5>
+                                <ul class="space-y-1">
+                                    @foreach($recommendations as $recommendation)
+                                        <li class="text-sm text-green-700 flex items-start">
+                                            <i class="fas fa-circle text-green-400 text-xs mt-1.5 mr-2 flex-shrink-0" style="font-size: 4px;"></i>
+                                            <span>{{ $recommendation }}</span>
+                                        </li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                        @endif
+
                         <div class="mt-3 p-3 bg-yellow-100 rounded-md">
                             <p class="text-xs text-yellow-800">
                                 <i class="fas fa-info-circle mr-1"></i>
