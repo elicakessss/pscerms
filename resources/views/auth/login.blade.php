@@ -314,7 +314,7 @@
                 <div class="login-logo">
                     <img src="{{ asset('images/psg-logo.png') }}" alt="PSG Logo" class="logo-image">
                     <h2>Paulinian Student Council</h2>
-                    <p>E-Portfolio and Rank Management System</p>
+                    <p>E-Portfolio and Ranking System</p>
                 </div>
             </div>
         </div>

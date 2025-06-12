@@ -321,37 +321,37 @@ class UserManagementController extends Controller
                         ->with('success', 'User updated successfully!');
     }
 
-    public function destroy($type, $id)
-    {
-        $user = $this->getUserByTypeAndId($type, $id);
+    public function destroy(Request $request, $type, $id)
+{
+    $user = $this->getUserByTypeAndId($type, $id);
 
-        if (!$user) {
-            return redirect()->route('admin.user_management.index')
-                           ->with('error', 'User not found.');
-        }
-
-        // Prevent admin from deleting their own account
-        if ($type === 'admin' && auth('admin')->check() && auth('admin')->id() == $id) {
-            return redirect()->route('admin.user_management.index')
-                           ->with('error', 'You cannot delete your own account.');
-        }
-
-        // Store user data for logging before deletion
-        $userData = $user->toArray();
-
-        // Delete profile picture if exists
-        if (isset($user->profile_picture) && $user->profile_picture) {
-            \Storage::disk('public')->delete($user->profile_picture);
-        }
-
-        $user->delete();
-
-        // Log the user deletion
-        SystemLogService::logDelete($type, $user, $userData, $request);
-
+    if (!$user) {
         return redirect()->route('admin.user_management.index')
-                        ->with('success', 'User deleted successfully!');
+                       ->with('error', 'User not found.');
     }
+
+    // Prevent admin from deleting their own account
+    if ($type === 'admin' && auth('admin')->check() && auth('admin')->id() == $id) {
+        return redirect()->route('admin.user_management.index')
+                       ->with('error', 'You cannot delete your own account.');
+    }
+
+    // Store user data for logging before deletion
+    $userData = $user->toArray();
+
+    // Delete profile picture if exists
+    if (isset($user->profile_picture) && $user->profile_picture) {
+        \Storage::disk('public')->delete($user->profile_picture);
+    }
+
+    $user->delete();
+
+    // Log the user deletion
+    SystemLogService::logDelete($type, $user, $userData, $request);
+
+    return redirect()->route('admin.user_management.index')
+                    ->with('success', 'User deleted successfully!');
+}
 
     private function getUserByTypeAndId($type, $id)
     {
